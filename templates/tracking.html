@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Tracking</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    .wrap { max-width: 900px; margin: 30px auto; padding: 24px; background: #111827; border-radius: 16px; }
+    .map { height: 280px; background: linear-gradient(135deg, #1d4ed8, #0f766e); border-radius: 16px; position: relative; overflow: hidden; }
+    .marker { position: absolute; width: 18px; height: 18px; background: #facc15; border-radius: 50%; top: 50%; left: 60%; box-shadow: 0 0 0 8px rgba(250,204,21,0.25); }
+    .status { margin-top: 16px; padding: 12px; background: #0f172a; border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Live Service Tracking</h2>
+    <div class="map">
+      <div class="marker"></div>
+    </div>
+    <div class="status">
+      <strong>Status:</strong> In transit<br/>
+      <strong>ETA:</strong> 14 minutes<br/>
+      <strong>Driver:</strong> Samuel A.
+    </div>
+  </div>
+</body>
+</html>

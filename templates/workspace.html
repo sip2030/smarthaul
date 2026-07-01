@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Workspace</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    .wrap { max-width: 980px; margin: 30px auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: #111827; padding: 20px; border-radius: 16px; }
+    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0 12px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; }
+    button { padding: 10px 14px; border: none; border-radius: 10px; background: #22c55e; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>SmartHaul Workspace</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Book a service</h3>
+        <form action="/bookings" method="post">
+          <input name="customer_id" placeholder="Customer ID" required />
+          <select name="service_type">
+            <option value="ride">Ride</option>
+            <option value="haulage">Haulage</option>
+            <option value="vendor">Vendor Service</option>
+          </select>
+          <input name="pickup" placeholder="Pickup" required />
+          <input name="destination" placeholder="Destination" required />
+          <input name="price" type="number" placeholder="Price" required />
+          <button type="submit">Create booking</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Register a vendor</h3>
+        <form action="/vendors" method="post">
+          <input name="name" placeholder="Vendor name" required />
+          <input name="category" placeholder="Category" required />
+          <input name="location" placeholder="Location" required />
+          <input name="rating" type="number" step="0.1" placeholder="Rating" value="4.8" />
+          <button type="submit">Save vendor</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

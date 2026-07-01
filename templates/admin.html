@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    .wrap { max-width: 1100px; margin: 30px auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .card { background: #111827; padding: 18px; border-radius: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>SmartHaul Admin Dashboard</h2>
+    <div class="grid">
+      <div class="card"><strong>Bookings</strong><br/>Live demand tracking</div>
+      <div class="card"><strong>Providers</strong><br/>Verified service agents</div>
+      <div class="card"><strong>Vendors</strong><br/>Marketplace activity</div>
+      <div class="card"><strong>Reports</strong><br/>Abuse and dispute review</div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>Recent activity</h3>
+      <table>
+        <tr><th>Type</th><th>Status</th><th>Owner</th></tr>
+        <tr><td>Booking</td><td>Pending</td><td>Customer A</td></tr>
+        <tr><td>Vendor</td><td>Active</td><td>Urban Logistics Hub</td></tr>
+        <tr><td>Report</td><td>Under review</td><td>User 203</td></tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

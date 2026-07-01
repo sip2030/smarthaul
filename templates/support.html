@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Safety</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    .wrap { max-width: 760px; margin: 40px auto; padding: 24px; background: #111827; border-radius: 16px; }
+    input, textarea { width: 100%; padding: 10px; margin: 8px 0 12px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; }
+    button { padding: 10px 14px; border: none; border-radius: 10px; background: #dc2626; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Safety & Abuse Report</h2>
+    <p>Report inappropriate behavior, misconduct, or unsafe activity securely.</p>
+    <form action="/reports" method="post">
+      <input name="user_id" placeholder="Your user ID" required />
+      <input name="type" placeholder="Report type" required />
+      <textarea name="description" placeholder="Describe the issue" rows="5" required></textarea>
+      <button type="submit">Submit report</button>
+    </form>
+  </div>
+</body>
+</html>

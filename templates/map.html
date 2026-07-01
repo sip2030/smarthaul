@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Map</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    .wrap { max-width: 980px; margin: 30px auto; padding: 24px; }
+    .map { height: 420px; background: linear-gradient(135deg, #1e3a8a, #0f766e); border-radius: 18px; position: relative; overflow: hidden; }
+    .pin { position: absolute; width: 20px; height: 20px; background: #facc15; border-radius: 50%; box-shadow: 0 0 0 8px rgba(250,204,21,0.24); }
+    .pin.one { top: 30%; left: 40%; }
+    .pin.two { top: 55%; left: 70%; }
+    .pin.three { top: 65%; left: 25%; }
+    .legend { margin-top: 12px; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>SmartHaul Map View</h2>
+    <div class="map">
+      <div class="pin one"></div>
+      <div class="pin two"></div>
+      <div class="pin three"></div>
+    </div>
+    <div class="legend">Live service hotspots, provider availability, and route density.</div>
+  </div>
+</body>
+</html>
