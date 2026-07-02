@@ -36,14 +36,14 @@ SmartHaul helps users:
 - Gather feedback from early users
 
 ### Phase 2: Local Market Expansion
-- Add stronger authentication
-- Improve booking tracking and notifications
-- Expand vendor onboarding
+- Stronger authentication with password policy, session expiry, logout, and lockout controls
+- Improved booking tracking with timeline events, live route snapshots, and richer notifications
+- Expanded vendor onboarding with document status, review queue, and admin approval workflow
 
 ### Phase 3: Scale-Up
-- Add real map routing
-- Add chat and call support
-- Add analytics and moderation automation
+- Add map-style routing with simulated live coordinates and route polylines
+- Add chat and call support with call logs and moderated messaging
+- Add analytics and moderation automation through admin operations metrics and auto-generated review cases
 
 ## 6. Free-Tier Hosting Plan
 Use Render with the provided configuration for the initial launch.
@@ -58,4 +58,20 @@ Use Render with the provided configuration for the initial launch.
 - Launch prototype publicly
 - Collect feedback
 - Improve onboarding and trust systems
-- Add real-time map and payment integration
+- Replace simulated map flows with provider-backed production routing integrations
+
+## 9. Launch Decisions
+These are the current recommended defaults for the first public launch.
+
+- Launch region: Lagos, Nigeria
+- Initial services: ride requests, haulage, and vendor marketplace flows
+- Platform scope: responsive web app first
+- Payment provider: Flutterwave
+- Safety baseline: account verification, password policy, session controls, moderation, and dispute handling
+
+## 10. Decision Rationale
+- Lagos-first matches the current data, UI assumptions, and routing setup.
+- The current MVP already covers the initial services needed for a useful pilot.
+- Responsive web first keeps launch operations simpler while staying mobile-friendly.
+- Flutterwave is already integrated in the codebase and fits the current deployment flow.
+- The existing moderation, dispute, and auth controls provide a practical launch safety baseline.

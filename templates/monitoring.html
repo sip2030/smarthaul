@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHaul Monitoring</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --panel: rgba(15, 23, 42, 0.94);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+    body { margin: 0; font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #18314b 0, var(--bg) 58%); color: var(--text); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 40px; }
+    .hero, .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 24px 80px rgba(2, 6, 23, 0.35); }
+    .metric { background: rgba(2, 6, 23, 0.65); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+    .metric strong { display: block; font-size: 1.5rem; margin-bottom: 6px; }
+    .split { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .muted { color: var(--muted); }
+    .status { min-height: 24px; color: #bae6fd; }
+    .tag { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 0.78rem; margin-right: 8px; margin-bottom: 8px; }
+    .tag.good { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+    .tag.warn { background: rgba(245, 158, 11, 0.18); color: #fde68a; }
+    .tag.bad { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .tag.info { background: rgba(59, 130, 246, 0.18); color: #bfdbfe; }
+    .card { background: rgba(2, 6, 23, 0.7); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .list { display: grid; gap: 10px; }
+    .alert { border-left: 4px solid var(--warn); padding-left: 12px; }
+    .alert.high { border-left-color: var(--bad); }
+    .alert.medium { border-left-color: var(--warn); }
+    .alert.low { border-left-color: #60a5fa; }
+    .alert.ok { border-left-color: var(--good); }
+    button { border: none; border-radius: 12px; padding: 10px 14px; background: linear-gradient(135deg, #2563eb, #0f766e); color: white; cursor: pointer; }
+    pre { margin-top: 14px; padding: 14px; border-radius: 14px; background: #020617; overflow-x: auto; }
+    @media (max-width: 960px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="split" style="margin-bottom: 16px;">
+      <div>
+        <h1>Business Monitoring</h1>
+        <p class="muted">Operational health, queue depths, and safety signals for the SmartHaul admin team.</p>
+      </div>
+      <button id="refresh">Refresh snapshot</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <section class="hero" id="summary"></section>
+
+    <section class="grid" style="margin-top: 16px;">
+      <div class="card">
+        <div class="split"><h2>Workloads</h2><span class="muted">Queue depth</span></div>
+        <div id="workload-list" class="list"></div>
+      </div>
+      <div class="card">
+        <div class="split"><h2>Safety Signals</h2><span class="muted">Escalation load</span></div>
+        <div id="safety-list" class="list"></div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="split"><h2>Operational Alerts</h2><span class="muted">Actionable follow-up</span></div>
+      <div id="alerts" class="list" style="margin-top: 12px;"></div>
+    </section>
+
+    <section class="card" style="margin-top: 16px;">
+      <div class="split"><h2>Scale Flags</h2><span class="muted">Performance and rollout readiness</span></div>
+      <div id="flags"></div>
+      <pre id="snapshot-json">Loading snapshot...</pre>
+    </section>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const summaryEl = document.getElementById("summary");
+    const workloadList = document.getElementById("workload-list");
+    const safetyList = document.getElementById("safety-list");
+    const alertsEl = document.getElementById("alerts");
+    const flagsEl = document.getElementById("flags");
+    const snapshotJson = document.getElementById("snapshot-json");
+
+    function metric(title, value, note = "") {
+      return `<div class="metric"><strong>${value}</strong><div>${title}</div>${note ? `<div class="muted">${note}</div>` : ""}</div>`;
+    }
+
+    function renderKeyValueList(container, entries) {
+      container.innerHTML = entries.map(([label, value]) => `<div><strong>${label}:</strong> ${value}</div>`).join("");
+    }
+
+    function renderAlerts(entries) {
+      alertsEl.innerHTML = entries.map((alert) => {
+        const badgeClass = alert.severity === "high" ? "bad" : alert.severity === "medium" ? "warn" : alert.severity === "ok" ? "good" : "info";
+        return `<div class="alert ${alert.severity}"><span class="tag ${badgeClass}">${alert.severity}</span><strong>${alert.title}</strong><div class="muted">${alert.detail}</div></div>`;
+      }).join("");
+    }
+
+    async function loadSnapshot() {
+      const response = await fetch("/admin/monitoring/snapshot");
+      const data = await response.json();
+      if (!response.ok) {
+        statusEl.textContent = data.detail || "Unable to load monitoring snapshot.";
+        return;
+      }
+      statusEl.textContent = `Snapshot ${data.status} at ${data.checked_at}`;
+      summaryEl.innerHTML = [
+        metric("Open moderation cases", data.safety.open_moderation_cases, `${data.safety.flagged_messages} flagged messages`),
+        metric("Pending vendor reviews", data.workload.pending_vendor_reviews, `${data.workload.bookings_pending} pending bookings`),
+        metric("Calls without consent", data.safety.calls_without_consent, `${data.workload.call_sessions_total} total calls`),
+        metric("Unread notifications", data.safety.notifications_unread, `${data.workload.payments_pending} pending payments`),
+      ].join("");
+      renderKeyValueList(workloadList, Object.entries(data.workload));
+      renderKeyValueList(safetyList, Object.entries(data.safety));
+      renderAlerts(data.alerts || []);
+      flagsEl.innerHTML = Object.entries(data.scale_flags).map(([label, value]) => `<span class="tag ${value ? 'good' : 'warn'}">${label}: ${value ? 'enabled' : 'fallback'}</span>`).join("");
+      snapshotJson.textContent = JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById("refresh").addEventListener("click", loadSnapshot);
+    loadSnapshot();
+  </script>
+</body>
+</html>

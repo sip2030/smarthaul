@@ -7,16 +7,20 @@
   <style>
     :root { color-scheme: dark; }
     body { font-family: Arial, sans-serif; margin: 0; background: #07111f; color: #f8fafc; }
-    .hero { padding: 48px 24px; background: linear-gradient(135deg, #2563eb, #0f766e); }
+    .hero { padding: 56px 24px 40px; background: linear-gradient(135deg, #2563eb, #0f766e); }
     .container { max-width: 1160px; margin: 0 auto; }
-    nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: rgba(2,6,23,0.8); }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: rgba(2,6,23,0.8); position: sticky; top: 0; z-index: 10; }
     nav a { color: #f8fafc; text-decoration: none; margin-left: 16px; }
+    .hero-copy { max-width: 680px; }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3.2rem); margin-bottom: 12px; }
+    .hero p { font-size: 1.08rem; line-height: 1.6; color: #e2e8f0; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 24px 0; }
     .card { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 20px; }
     .pill { display: inline-block; padding: 6px 10px; border-radius: 999px; margin: 4px 6px 0 0; background: #1d4ed8; font-size: 0.9rem; }
     button { background: #22c55e; border: none; color: white; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
-    .stats { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 16px; }
-    .stat { background: #0f172a; padding: 16px; border-radius: 12px; }
+    .stats { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 20px; }
+    .stat { background: rgba(2,6,23,0.35); padding: 16px; border-radius: 12px; }
+    .section-title { font-size: 1.2rem; margin: 8px 0 6px; }
   </style>
 </head>
 <body>
@@ -32,19 +36,21 @@
 
   <section class="hero">
     <div class="container">
-      <h1>SmartHaul</h1>
-      <p>Future-ready mobility, haulage, and marketplace platform with AI support and operational monitoring.</p>
-      <div>
-        <span class="pill">Ride Booking</span>
-        <span class="pill">Haulage</span>
-        <span class="pill">Marketplace</span>
-        <span class="pill">AI Assistant</span>
-      </div>
-      <div class="stats">
-        <div class="stat"><strong>1.2k+</strong><br/>Active users</div>
-        <div class="stat"><strong>320</strong><br/>Providers</div>
-        <div class="stat"><strong>180</strong><br/>Vendors</div>
-        <div class="stat"><strong>94%</strong><br/>Satisfaction</div>
+      <div class="hero-copy">
+        <h1>SmartHaul</h1>
+        <p>Connect customers, providers, vendors, and admins through one intelligent platform for mobility, haulage, and marketplace services.</p>
+        <div>
+          <span class="pill">Ride Booking</span>
+          <span class="pill">Haulage</span>
+          <span class="pill">Marketplace</span>
+          <span class="pill">AI Assistant</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong>1.2k+</strong><br/>Active users</div>
+          <div class="stat"><strong>320</strong><br/>Providers</div>
+          <div class="stat"><strong>180</strong><br/>Vendors</div>
+          <div class="stat"><strong>94%</strong><br/>Satisfaction</div>
+        </div>
       </div>
     </div>
   </section>
@@ -52,24 +58,24 @@
   <div class="container">
     <div class="grid">
       <div class="card" id="customers">
-        <h3>Customers</h3>
-        <p>Book rides, move cargo, track services, and chat with support instantly.</p>
-        <button>Book a service</button>
+        <h3 class="section-title">Customers</h3>
+        <p>Book rides, move cargo, track services, and get help quickly when something changes.</p>
+        <a href="/workspace"><button>Book a service</button></a>
       </div>
       <div class="card" id="providers">
-        <h3>Providers</h3>
-        <p>Accept transport and haulage jobs, update status, and manage your workflow.</p>
-        <button>Join as provider</button>
+        <h3 class="section-title">Providers</h3>
+        <p>Accept transport and haulage jobs, update status, and keep your operations moving.</p>
+        <a href="/provider-dashboard"><button>Open provider view</button></a>
       </div>
       <div class="card" id="vendors">
-        <h3>Vendors</h3>
-        <p>List your products or services, receive orders, and grow your business.</p>
-        <button>Open marketplace</button>
+        <h3 class="section-title">Vendors</h3>
+        <p>List products or services, manage orders, and grow your marketplace presence.</p>
+        <a href="/vendor-dashboard"><button>Open vendor view</button></a>
       </div>
       <div class="card" id="admin">
-        <h3>Admin</h3>
-        <p>Monitor bookings, disputes, reports, growth, and business health from one panel.</p>
-        <button>View dashboard</button>
+        <h3 class="section-title">Admin</h3>
+        <p>Monitor bookings, disputes, reports, growth, and service health from one panel.</p>
+        <a href="/admin"><button>View dashboard</button></a>
       </div>
     </div>
   </div>

@@ -5,24 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Tracking</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
-    .wrap { max-width: 900px; margin: 30px auto; padding: 24px; background: #111827; border-radius: 16px; }
-    .map { height: 280px; background: linear-gradient(135deg, #1d4ed8, #0f766e); border-radius: 16px; position: relative; overflow: hidden; }
-    .marker { position: absolute; width: 18px; height: 18px; background: #facc15; border-radius: 50%; top: 50%; left: 60%; box-shadow: 0 0 0 8px rgba(250,204,21,0.25); }
-    .status { margin-top: 16px; padding: 12px; background: #0f172a; border-radius: 12px; }
+    body { font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #163047, #07111f 55%); color: #f8fafc; margin: 0; }
+    .wrap { max-width: 980px; margin: 30px auto; padding: 24px; background: rgba(15, 23, 42, 0.92); border-radius: 20px; border: 1px solid rgba(148, 163, 184, 0.16); }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    input { flex: 1 1 240px; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: #fff; }
+    button { padding: 10px 14px; border-radius: 10px; border: none; background: #22c55e; color: white; cursor: pointer; }
+    .map { height: 320px; background: linear-gradient(135deg, rgba(29, 78, 216, 0.18), rgba(15, 118, 110, 0.16)); border-radius: 18px; overflow: hidden; border: 1px solid rgba(59, 130, 246, 0.16); }
+    .status { margin-top: 16px; padding: 16px; background: #0f172a; border-radius: 14px; }
+    .muted { color: #94a3b8; }
+    .timeline { margin-top: 16px; display: grid; gap: 10px; }
+    .timeline-item { background: rgba(15, 118, 110, 0.12); border: 1px solid rgba(45, 212, 191, 0.16); padding: 12px; border-radius: 12px; }
+    .error { color: #fca5a5; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h2>Live Service Tracking</h2>
+    <div class="controls">
+      <input id="booking-id" placeholder="Enter booking ID" />
+      <button id="load-tracking">Load tracking</button>
+    </div>
     <div class="map">
-      <div class="marker"></div>
+      <svg id="tracking-svg" viewBox="0 0 1000 320" width="100%" height="100%"></svg>
     </div>
-    <div class="status">
-      <strong>Status:</strong> In transit<br/>
-      <strong>ETA:</strong> 14 minutes<br/>
-      <strong>Driver:</strong> Samuel A.
-    </div>
+    <div id="tracking-status" class="status muted">Load a booking to view live route coordinates, ETA, and timeline events.</div>
+    <div id="tracking-timeline" class="timeline"></div>
   </div>
+  <script>
+    const bookingInput = document.getElementById("booking-id");
+    const statusBox = document.getElementById("tracking-status");
+    const timelineBox = document.getElementById("tracking-timeline");
+    const svg = document.getElementById("tracking-svg");
+    const params = new URLSearchParams(window.location.search);
+    const presetBookingId = params.get("bookingId");
+    let refreshTimer = null;
+
+    if (presetBookingId) {
+      bookingInput.value = presetBookingId;
+    }
+
+    function projectPoints(polyline) {
+      const lats = polyline.map((point) => point.lat);
+      const lngs = polyline.map((point) => point.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      return polyline.map((point) => {
+        const x = 60 + ((point.lng - minLng) / Math.max(maxLng - minLng, 0.0001)) * 880;
+        const y = 280 - ((point.lat - minLat) / Math.max(maxLat - minLat, 0.0001)) * 240;
+        return { x, y };
+      });
+    }
+
+    function renderMap(route) {
+      const points = projectPoints(route.polyline || []);
+      const current = projectPoints([route.current_position, ...route.polyline.slice(0, 1)]).shift();
+      const polylinePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+      const start = points[0] || { x: 80, y: 220 };
+      const end = points[points.length - 1] || { x: 900, y: 80 };
+      const marker = current || start;
+      svg.innerHTML = `
+        <rect x="0" y="0" width="1000" height="320" fill="rgba(15, 23, 42, 0.6)"></rect>
+        <polyline points="${polylinePoints}" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        <circle cx="${start.x}" cy="${start.y}" r="10" fill="#22c55e"></circle>
+        <circle cx="${end.x}" cy="${end.y}" r="10" fill="#f97316"></circle>
+        <circle cx="${marker.x}" cy="${marker.y}" r="12" fill="#facc15"></circle>
+        <text x="${start.x + 14}" y="${start.y + 4}" fill="#d1fae5" font-size="16">Pickup</text>
+        <text x="${end.x + 14}" y="${end.y + 4}" fill="#ffedd5" font-size="16">Destination</text>
+      `;
+    }
+
+    function renderTimeline(timeline) {
+      timelineBox.innerHTML = timeline.map((item) => `
+        <div class="timeline-item">
+          <strong>${item.status}</strong><br/>
+          <span class="muted">${item.note}</span><br/>
+          <span class="muted">${item.created_at || "recently"}</span>
+        </div>
+      `).join("");
+    }
+
+    async function loadTracking() {
+      const bookingId = bookingInput.value.trim();
+      if (!bookingId) {
+        statusBox.innerHTML = '<span class="error">Booking ID is required.</span>';
+        return;
+      }
+      try {
+        const response = await fetch(`/tracking/${bookingId}/live`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || data.message || "Unable to load tracking");
+        renderMap(data.route);
+        renderTimeline(data.timeline || []);
+        statusBox.innerHTML = `
+          <strong>Status:</strong> ${data.status}<br/>
+          <strong>ETA:</strong> ${data.eta_minutes} minutes<br/>
+          <strong>Provider:</strong> ${data.route.provider || "simulated"}<br/>
+          <strong>Coordinates:</strong> ${data.current_position.lat}, ${data.current_position.lng}
+        `;
+      } catch (error) {
+        statusBox.innerHTML = `<span class="error">${error.message}</span>`;
+      }
+    }
+
+    document.getElementById("load-tracking").addEventListener("click", loadTracking);
+    if (presetBookingId) {
+      loadTracking();
+      refreshTimer = setInterval(loadTracking, 20000);
+      window.addEventListener("beforeunload", () => clearInterval(refreshTimer));
+    }
+  </script>
 </body>
 </html>

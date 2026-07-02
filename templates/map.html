@@ -5,25 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Map</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
-    .wrap { max-width: 980px; margin: 30px auto; padding: 24px; }
-    .map { height: 420px; background: linear-gradient(135deg, #1e3a8a, #0f766e); border-radius: 18px; position: relative; overflow: hidden; }
-    .pin { position: absolute; width: 20px; height: 20px; background: #facc15; border-radius: 50%; box-shadow: 0 0 0 8px rgba(250,204,21,0.24); }
-    .pin.one { top: 30%; left: 40%; }
-    .pin.two { top: 55%; left: 70%; }
-    .pin.three { top: 65%; left: 25%; }
+    body { font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #163047, #07111f 55%); color: #f8fafc; margin: 0; }
+    .wrap { max-width: 1040px; margin: 30px auto; padding: 24px; }
+    .card { background: rgba(15, 23, 42, 0.92); border-radius: 20px; padding: 24px; border: 1px solid rgba(148, 163, 184, 0.16); }
+    .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    input { padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: #fff; }
+    button { padding: 10px 14px; border-radius: 10px; border: none; background: #22c55e; color: white; cursor: pointer; }
+    .map { height: 420px; background: linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(15, 118, 110, 0.18)); border-radius: 18px; overflow: hidden; border: 1px solid rgba(59, 130, 246, 0.16); }
     .legend { margin-top: 12px; color: #cbd5e1; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+    .stat { padding: 12px; border-radius: 12px; background: rgba(15, 118, 110, 0.12); border: 1px solid rgba(45, 212, 191, 0.16); }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2>SmartHaul Map View</h2>
-    <div class="map">
-      <div class="pin one"></div>
-      <div class="pin two"></div>
-      <div class="pin three"></div>
+    <div class="card">
+      <h2>SmartHaul Map View</h2>
+      <div class="controls">
+        <input id="pickup" placeholder="Pickup" />
+        <input id="destination" placeholder="Destination" />
+        <button id="load-route">Load route</button>
+      </div>
+      <div class="map">
+        <svg id="route-svg" viewBox="0 0 1000 420" width="100%" height="100%"></svg>
+      </div>
+      <div id="legend" class="legend">Provider-backed route previews will appear here when configured. Otherwise the app uses the simulated fallback route.</div>
+      <div id="route-stats" class="stats"></div>
     </div>
-    <div class="legend">Live service hotspots, provider availability, and route density.</div>
   </div>
+  <script>
+    const pickupInput = document.getElementById("pickup");
+    const destinationInput = document.getElementById("destination");
+    const routeSvg = document.getElementById("route-svg");
+    const legend = document.getElementById("legend");
+    const stats = document.getElementById("route-stats");
+    const params = new URLSearchParams(window.location.search);
+
+    pickupInput.value = params.get("pickup") || "Yaba";
+    destinationInput.value = params.get("destination") || "Lekki";
+
+    function projectPoints(polyline) {
+      const lats = polyline.map((point) => point.lat);
+      const lngs = polyline.map((point) => point.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      return polyline.map((point) => {
+        const x = 60 + ((point.lng - minLng) / Math.max(maxLng - minLng, 0.0001)) * 880;
+        const y = 360 - ((point.lat - minLat) / Math.max(maxLat - minLat, 0.0001)) * 300;
+        return { x, y };
+      });
+    }
+
+    function renderRoute(route) {
+      const points = projectPoints(route.polyline || []);
+      const polylinePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+      const start = points[0] || { x: 80, y: 300 };
+      const end = points[points.length - 1] || { x: 900, y: 80 };
+      routeSvg.innerHTML = `
+        <rect x="0" y="0" width="1000" height="420" fill="rgba(15, 23, 42, 0.55)"></rect>
+        <polyline points="${polylinePoints}" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        <circle cx="${start.x}" cy="${start.y}" r="12" fill="#22c55e"></circle>
+        <circle cx="${end.x}" cy="${end.y}" r="12" fill="#f97316"></circle>
+      `;
+      legend.textContent = `${route.provider || "simulated"} route loaded from ${route.pickup} to ${route.destination}. Source: ${route.route_source || route.route_status}.`;
+      stats.innerHTML = `
+        <div class="stat"><strong>Distance</strong><div>${route.distance_km} km</div></div>
+        <div class="stat"><strong>ETA</strong><div>${route.eta_minutes} min</div></div>
+        <div class="stat"><strong>Provider</strong><div>${route.provider || "simulated"}</div></div>
+        <div class="stat"><strong>Source</strong><div>${route.route_source || route.route_status}</div></div>
+        <div class="stat"><strong>Status</strong><div>${route.route_status}</div></div>
+      `;
+    }
+
+    async function loadRoute() {
+      const pickup = pickupInput.value.trim();
+      const destination = destinationInput.value.trim();
+      const response = await fetch(`/route/estimate?pickup=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(destination)}`);
+      const data = await response.json();
+      if (!response.ok) {
+        legend.textContent = data.detail || data.message || "Unable to load route";
+        return;
+      }
+      renderRoute(data);
+    }
+
+    document.getElementById("load-route").addEventListener("click", loadRoute);
+    loadRoute();
+  </script>
 </body>
 </html>

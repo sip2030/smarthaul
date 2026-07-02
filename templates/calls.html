@@ -5,24 +5,238 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Calls</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
-    .wrap { max-width: 860px; margin: 30px auto; padding: 24px; background: #111827; border-radius: 16px; }
-    .panel { background: #020617; padding: 16px; border-radius: 12px; margin-top: 14px; }
-    button { padding: 10px 14px; border: none; border-radius: 10px; cursor: pointer; margin-right: 8px; }
-    .start { background: #22c55e; color: white; }
-    .end { background: #dc2626; color: white; }
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(15, 23, 42, 0.94);
+      --card: #0f172a;
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+    body { margin: 0; font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #17304c 0, var(--bg) 58%); color: var(--text); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 40px; }
+    .hero { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 16px; align-items: stretch; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 24px 80px rgba(2, 6, 23, 0.35); }
+    .panel h1, .panel h2, .panel h3 { margin: 0 0 10px; }
+    .muted { color: var(--muted); }
+    .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .metric { background: rgba(2, 6, 23, 0.64); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+    .metric strong { display: block; font-size: 1.4rem; margin-bottom: 6px; }
+    .grid { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 16px; margin-top: 16px; }
+    .card { background: rgba(2, 6, 23, 0.7); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .form { display: grid; gap: 10px; }
+    input, select, textarea, button { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.8); background: #020617; color: var(--text); padding: 10px 12px; font: inherit; }
+    textarea { min-height: 96px; resize: vertical; }
+    button { cursor: pointer; border: none; background: linear-gradient(135deg, var(--accent), #16a34a); color: white; font-weight: 700; }
+    button.secondary { background: linear-gradient(135deg, #1f2937, #334155); }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+    .toolbar button { width: auto; }
+    .logs, .stats { display: grid; gap: 12px; }
+    .log { padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(15, 23, 42, 0.88); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 0.78rem; margin-right: 8px; margin-bottom: 6px; }
+    .badge.ok { background: rgba(34, 197, 94, 0.16); color: #86efac; }
+    .badge.warn { background: rgba(245, 158, 11, 0.16); color: #fde68a; }
+    .badge.danger { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+    .badge.info { background: rgba(56, 189, 248, 0.16); color: #bae6fd; }
+    .empty { color: var(--muted); text-align: center; padding: 20px; border: 1px dashed var(--line); border-radius: 14px; }
+    .status { min-height: 24px; color: #bae6fd; }
+    .split { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    @media (max-width: 960px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2>Audio & Video Support</h2>
-    <p>Secure call support for disputes, verification, and customer assistance.</p>
-    <div class="panel">
-      <strong>Active session</strong>
-      <p>Support agent connected with customer.</p>
-      <button class="start">Start call</button>
-      <button class="end">End call</button>
+    <div class="hero">
+      <section class="panel">
+        <h1>Audio & Video Support</h1>
+        <p class="muted">Log calls, escalate risky support interactions, and keep the moderation queue in sync.</p>
+        <div id="call-summary" class="summary"></div>
+      </section>
+      <section class="panel">
+        <h2>Live Support Capture</h2>
+        <p class="muted">Create a support call and let the backend flag risky notes or missing consent automatically.</p>
+        <div class="status" id="call-status"></div>
+        <form id="call-form" class="form">
+          <input name="participant" placeholder="Participant" value="customer" required />
+          <textarea name="note" placeholder="Call note"></textarea>
+          <select name="call_type">
+            <option value="audio">Audio</option>
+            <option value="video">Video</option>
+          </select>
+          <select name="status">
+            <option value="connected">Connected</option>
+            <option value="escalated">Escalated</option>
+            <option value="ended">Ended</option>
+            <option value="missed">Missed</option>
+          </select>
+          <label style="display:flex; gap:10px; align-items:center; color: var(--muted);">
+            <input type="checkbox" name="consent_given" style="width:auto;" checked />
+            Consent recorded
+          </label>
+          <button type="submit">Log call</button>
+        </form>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="split">
+          <h2>Call Logs</h2>
+          <button class="secondary" id="reload-calls" type="button">Refresh</button>
+        </div>
+        <div id="call-logs" class="logs"></div>
+      </section>
+      <section class="card">
+        <div class="split">
+          <h2>Moderation Queue</h2>
+          <button class="secondary" id="reload-cases" type="button">Refresh</button>
+        </div>
+        <div id="moderation-status" class="status"></div>
+        <div id="moderation-cases" class="logs"></div>
+      </section>
     </div>
   </div>
+
+  <script>
+    const callSummary = document.getElementById("call-summary");
+    const callLogs = document.getElementById("call-logs");
+    const callStatus = document.getElementById("call-status");
+    const moderationCases = document.getElementById("moderation-cases");
+    const moderationStatus = document.getElementById("moderation-status");
+
+    function badge(className, text) {
+      return `<span class="badge ${className}">${text}</span>`;
+    }
+
+    function renderSummary(summary) {
+      const byStatus = (summary.by_status || []).map((item) => `${item.status}: ${item.count}`).join(" • ") || "No calls yet";
+      const byType = (summary.by_type || []).map((item) => `${item.call_type}: ${item.count}`).join(" • ") || "No calls yet";
+      callSummary.innerHTML = `
+        <div class="metric"><strong>${summary.open_moderation_cases ?? 0}</strong><span>open moderation cases</span></div>
+        <div class="metric"><strong>${summary.calls_without_consent ?? 0}</strong><span>calls without consent</span></div>
+        <div class="metric"><strong>${(summary.by_status || []).reduce((total, item) => total + item.count, 0)}</strong><span>total calls</span></div>
+        <div class="metric"><strong>${(summary.by_type || []).length}</strong><span>call types tracked</span></div>
+      `;
+      moderationStatus.textContent = `Call statuses: ${byStatus} | Types: ${byType}`;
+    }
+
+    function renderCalls(calls) {
+      if (!calls.length) {
+        callLogs.innerHTML = '<div class="empty">No calls logged yet.</div>';
+        return;
+      }
+      callLogs.innerHTML = calls.map((call) => `
+        <article class="log">
+          <div>${badge(call.needs_review ? "danger" : "ok", call.needs_review ? "Needs review" : "Clear")}${badge("info", call.call_type)}</div>
+          <h3>${call.participant}</h3>
+          <p class="muted">${call.note || "No note recorded."}</p>
+          <p><strong>Status:</strong> ${call.status} &nbsp; <strong>Consent:</strong> ${call.consent_given ? "yes" : "no"}</p>
+          <p><strong>Reason:</strong> ${call.review_reason || "none"}</p>
+        </article>
+      `).join("");
+    }
+
+    function renderCases(cases) {
+      if (!cases.length) {
+        moderationCases.innerHTML = '<div class="empty">No moderation cases yet.</div>';
+        return;
+      }
+      moderationCases.innerHTML = cases.map((item) => `
+        <article class="log">
+          <div>${badge(item.status === "open" ? "warn" : "ok", item.status)}${badge(item.severity === "high" ? "danger" : "info", item.severity)}</div>
+          <h3>Case #${item.id}</h3>
+          <p class="muted">${item.source_text || item.reason}</p>
+          <p><strong>Reason:</strong> ${item.reason}</p>
+          <p><strong>Resolution note:</strong> ${item.resolution_note || "-"}</p>
+          <form class="form" data-case-id="${item.id}" style="margin-top: 12px;">
+            <select name="status">
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="escalated">Escalated</option>
+              <option value="in_review">In review</option>
+            </select>
+            <textarea name="resolution_note" placeholder="Resolution note"></textarea>
+            <button type="submit">Update case</button>
+          </form>
+        </article>
+      `).join("");
+
+      moderationCases.querySelectorAll("form[data-case-id]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const caseId = form.getAttribute("data-case-id");
+          const formData = new FormData(form);
+          const payload = Object.fromEntries(formData.entries());
+          const response = await fetch(`/admin/moderation/cases/${caseId}/resolve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) {
+            moderationStatus.textContent = `Unable to update case #${caseId}`;
+            return;
+          }
+          moderationStatus.textContent = `Case #${caseId} updated.`;
+          loadModeration();
+        });
+      });
+    }
+
+    async function loadCalls() {
+      const [summaryResponse, logsResponse] = await Promise.all([
+        fetch("/calls/summary"),
+        fetch("/calls/logs"),
+      ]);
+      const summary = await summaryResponse.json();
+      const calls = await logsResponse.json();
+      renderSummary(summary);
+      renderCalls(calls);
+    }
+
+    async function loadModeration() {
+      const response = await fetch("/admin/moderation/cases");
+      if (response.status === 401 || response.status === 403) {
+        moderationCases.innerHTML = '<div class="empty">Log in as an admin to manage the moderation queue.</div>';
+        return;
+      }
+      const cases = await response.json();
+      renderCases(cases);
+    }
+
+    document.getElementById("call-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const payload = {
+        participant: form.get("participant"),
+        note: form.get("note"),
+        call_type: form.get("call_type"),
+        status: form.get("status"),
+        consent_given: form.get("consent_given") === "on",
+      };
+      const response = await fetch("/calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      callStatus.textContent = response.ok
+        ? `Call #${data.id} logged${data.needs_review ? " and flagged for review" : ""}.`
+        : data.detail || "Unable to log call.";
+      await Promise.all([loadCalls(), loadModeration()]);
+    });
+
+    document.getElementById("reload-calls").addEventListener("click", loadCalls);
+    document.getElementById("reload-cases").addEventListener("click", loadModeration);
+
+    loadCalls();
+    loadModeration();
+  </script>
 </body>
 </html>

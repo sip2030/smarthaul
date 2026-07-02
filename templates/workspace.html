@@ -5,44 +5,208 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Workspace</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
-    .wrap { max-width: 980px; margin: 30px auto; padding: 24px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: #111827; padding: 20px; border-radius: 16px; }
-    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0 12px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; }
-    button { padding: 10px 14px; border: none; border-radius: 10px; background: #22c55e; color: white; cursor: pointer; }
+    body { font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #163047, #07111f 55%); color: #f8fafc; margin: 0; }
+    .wrap { max-width: 1120px; margin: 30px auto; padding: 24px; }
+    .hero { margin-bottom: 18px; }
+    .hero p { color: #cbd5e1; max-width: 720px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+    .card { background: rgba(15, 23, 42, 0.92); padding: 20px; border-radius: 18px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 24px 60px rgba(2, 6, 23, 0.28); }
+    .card h3 { margin-top: 0; }
+    .subtle { color: #94a3b8; font-size: 0.95rem; }
+    label { display: block; font-size: 0.92rem; color: #cbd5e1; }
+    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0 12px; border-radius: 10px; border: 1px solid #334155; background: #020617; color: white; box-sizing: border-box; }
+    button, .link-button { padding: 10px 14px; border: none; border-radius: 10px; background: #22c55e; color: white; cursor: pointer; text-decoration: none; display: inline-block; }
+    .link-button.secondary, button.secondary { background: #1d4ed8; }
+    .link-button.ghost, button.ghost { background: transparent; border: 1px solid #334155; }
+    .stack { display: flex; flex-wrap: wrap; gap: 10px; }
+    .result { margin-top: 14px; padding: 14px; border-radius: 12px; background: #0f172a; min-height: 52px; }
+    .result strong { color: #f8fafc; }
+    .success { color: #86efac; }
+    .error { color: #fca5a5; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 14px; }
+    .meta-box { padding: 12px; border-radius: 12px; background: rgba(15, 118, 110, 0.12); border: 1px solid rgba(45, 212, 191, 0.22); }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2>SmartHaul Workspace</h2>
+    <div class="hero">
+      <h2>SmartHaul Workspace</h2>
+      <p>Create a booking, launch payment checkout, and jump straight into live route monitoring from one workspace.</p>
+    </div>
     <div class="grid">
       <div class="card">
         <h3>Book a service</h3>
-        <form action="/bookings" method="post">
+        <form id="booking-form">
+          <label>Customer ID</label>
           <input name="customer_id" placeholder="Customer ID" required />
+          <label>Service type</label>
           <select name="service_type">
             <option value="ride">Ride</option>
             <option value="haulage">Haulage</option>
             <option value="vendor">Vendor Service</option>
           </select>
+          <label>Pickup</label>
           <input name="pickup" placeholder="Pickup" required />
+          <label>Destination</label>
           <input name="destination" placeholder="Destination" required />
+          <label>Price</label>
           <input name="price" type="number" placeholder="Price" required />
           <button type="submit">Create booking</button>
         </form>
+        <div id="booking-result" class="result subtle">Bookings created here will populate the payment and tracking flows below.</div>
+        <div id="booking-meta" class="meta" hidden></div>
+      </div>
+      <div class="card">
+        <h3>Launch payment checkout</h3>
+        <p class="subtle">Use sandbox for internal testing or Flutterwave when deployment secrets are configured.</p>
+        <form id="payment-form">
+          <label>Booking ID</label>
+          <input name="booking_id" id="payment-booking-id" placeholder="Booking ID" required />
+          <label>Amount</label>
+          <input name="amount" id="payment-amount" type="number" placeholder="Amount" required />
+          <label>Method</label>
+          <select name="method">
+            <option value="card">Card</option>
+            <option value="bank_transfer">Bank transfer</option>
+          </select>
+          <label>Gateway</label>
+          <select name="gateway">
+            <option value="sandbox">Sandbox</option>
+            <option value="flutterwave">Flutterwave</option>
+          </select>
+          <label>Customer email</label>
+          <input name="customer_email" placeholder="customer@example.com" />
+          <label>Customer name</label>
+          <input name="customer_name" placeholder="Customer name" />
+          <button type="submit">Start payment</button>
+        </form>
+        <div id="payment-result" class="result subtle">Flutterwave payments return a hosted checkout URL here.</div>
       </div>
       <div class="card">
         <h3>Register a vendor</h3>
-        <form action="/vendors" method="post">
+        <form id="vendor-form">
+          <label>Vendor name</label>
           <input name="name" placeholder="Vendor name" required />
+          <label>Category</label>
           <input name="category" placeholder="Category" required />
+          <label>Location</label>
           <input name="location" placeholder="Location" required />
+          <label>Rating</label>
           <input name="rating" type="number" step="0.1" placeholder="Rating" value="4.8" />
+          <label>Contact email</label>
+          <input name="contact_email" placeholder="vendor@example.com" />
+          <label><input name="documents_submitted" type="checkbox" style="width:auto; margin-right:8px;" /> Documents submitted</label>
           <button type="submit">Save vendor</button>
         </form>
+        <div id="vendor-result" class="result subtle">Vendor onboarding status will appear here after submission.</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 16px;">
+      <h3>Operational shortcuts</h3>
+      <div class="stack">
+        <a href="/tracking" id="tracking-link" class="link-button secondary">Open tracking</a>
+        <a href="/map" id="map-link" class="link-button ghost">Open route map</a>
+        <a href="/provider-dashboard" class="link-button ghost">Provider dashboard</a>
+        <a href="/vendor-dashboard" class="link-button ghost">Vendor dashboard</a>
       </div>
     </div>
   </div>
+  <script>
+    const bookingForm = document.getElementById("booking-form");
+    const bookingResult = document.getElementById("booking-result");
+    const bookingMeta = document.getElementById("booking-meta");
+    const paymentForm = document.getElementById("payment-form");
+    const paymentResult = document.getElementById("payment-result");
+    const vendorForm = document.getElementById("vendor-form");
+    const vendorResult = document.getElementById("vendor-result");
+    const trackingLink = document.getElementById("tracking-link");
+    const mapLink = document.getElementById("map-link");
+
+    function showMessage(target, text, type) {
+      target.className = `result ${type || "subtle"}`;
+      target.textContent = text;
+    }
+
+    function updateDeepLinks(booking) {
+      trackingLink.href = `/tracking?bookingId=${booking.id}`;
+      mapLink.href = `/map?pickup=${encodeURIComponent(booking.pickup)}&destination=${encodeURIComponent(booking.destination)}`;
+    }
+
+    bookingForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(bookingForm);
+      const payload = Object.fromEntries(formData.entries());
+      payload.price = Number(payload.price);
+
+      try {
+        const response = await fetch("/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || data.message || "Unable to create booking");
+        showMessage(bookingResult, `Booking ${data.id} created with ${data.status} status.`, "success");
+        bookingMeta.hidden = false;
+        bookingMeta.innerHTML = `
+          <div class="meta-box"><strong>Booking ID</strong><div>${data.id}</div></div>
+          <div class="meta-box"><strong>Service</strong><div>${data.service_type}</div></div>
+          <div class="meta-box"><strong>Price</strong><div>${data.price}</div></div>
+          <div class="meta-box"><strong>Tracking</strong><div>${data.status}</div></div>
+        `;
+        document.getElementById("payment-booking-id").value = data.id;
+        document.getElementById("payment-amount").value = data.price;
+        updateDeepLinks(data);
+      } catch (error) {
+        showMessage(bookingResult, error.message, "error");
+      }
+    });
+
+    paymentForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(paymentForm);
+      const payload = Object.fromEntries(formData.entries());
+      payload.booking_id = Number(payload.booking_id);
+      payload.amount = Number(payload.amount);
+
+      try {
+        const response = await fetch("/payments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || data.message || "Unable to start payment");
+        if (data.checkout_url) {
+          paymentResult.innerHTML = `<strong class="success">Checkout ready.</strong><br/>Reference: ${data.external_reference}<br/><a class="link-button secondary" href="${data.checkout_url}">Open Flutterwave checkout</a>`;
+        } else {
+          paymentResult.innerHTML = `<strong class="success">Payment recorded.</strong><br/>Reference: ${data.external_reference}<br/>Status: ${data.status}`;
+        }
+      } catch (error) {
+        showMessage(paymentResult, error.message, "error");
+      }
+    });
+
+    vendorForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(vendorForm);
+      const payload = Object.fromEntries(formData.entries());
+      payload.rating = Number(payload.rating || 0);
+      payload.documents_submitted = formData.get("documents_submitted") === "on";
+
+      try {
+        const response = await fetch("/vendors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || data.message || "Unable to save vendor");
+        vendorResult.innerHTML = `<strong class="success">Vendor saved.</strong><br/>Status: ${data.onboarding_status}<br/>Documents: ${data.document_status}`;
+      } catch (error) {
+        showMessage(vendorResult, error.message, "error");
+      }
+    });
+  </script>
 </body>
 </html>

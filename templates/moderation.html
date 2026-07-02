@@ -5,25 +5,196 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Moderation</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
-    .wrap { max-width: 860px; margin: 30px auto; padding: 24px; background: #111827; border-radius: 16px; }
-    .card { background: #020617; padding: 14px; border-radius: 12px; margin: 12px 0; }
-    button { padding: 8px 12px; border: none; border-radius: 10px; background: #f59e0b; color: black; cursor: pointer; margin-right: 8px; }
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(15, 23, 42, 0.95);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --ok: #22c55e;
+      --info: #38bdf8;
+    }
+    body { margin: 0; font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #18314b 0, var(--bg) 58%); color: var(--text); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 40px; }
+    .panel, .card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: 0 24px 80px rgba(2, 6, 23, 0.35); }
+    .header { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; }
+    .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .metric { background: rgba(2, 6, 23, 0.65); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+    .metric strong { display: block; font-size: 1.4rem; margin-bottom: 6px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+    .case { padding: 16px; border-radius: 16px; background: rgba(2, 6, 23, 0.72); border: 1px solid var(--line); }
+    .badge { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 0.78rem; margin-right: 8px; margin-bottom: 8px; }
+    .badge.open { background: rgba(245, 158, 11, 0.18); color: #fde68a; }
+    .badge.closed { background: rgba(34, 197, 94, 0.18); color: #86efac; }
+    .badge.high { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .badge.medium { background: rgba(56, 189, 248, 0.18); color: #bae6fd; }
+    .badge.low { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+    .muted { color: var(--muted); }
+    .status { color: #bae6fd; min-height: 24px; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    button, select, textarea { border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.8); background: #020617; color: var(--text); padding: 10px 12px; font: inherit; }
+    button { cursor: pointer; border: none; background: linear-gradient(135deg, var(--accent), #d97706); color: #111827; font-weight: 700; }
+    textarea { width: 100%; min-height: 92px; resize: vertical; box-sizing: border-box; }
+    .form { display: grid; gap: 10px; margin-top: 12px; }
+    .empty { color: var(--muted); padding: 18px; border: 1px dashed var(--line); border-radius: 16px; text-align: center; }
+    .split { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    @media (max-width: 960px) {
+      .header { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h2>Moderation & Dispute Review</h2>
-    <div class="card">
-      <strong>Report #102</strong>
-      <p>Customer reports abusive language from provider.</p>
-      <button>Review</button><button>Resolve</button>
+    <div class="header">
+      <section class="panel">
+        <h1>Moderation Workbench</h1>
+        <p class="muted">Review flagged messages, call escalations, and resolution notes from one place.</p>
+        <div id="summary" class="summary"></div>
+      </section>
+      <section class="panel">
+        <div class="split">
+          <div>
+            <h2>Queue Controls</h2>
+            <p class="muted">Actions here require an authenticated admin session.</p>
+          </div>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+        <div id="status" class="status"></div>
+        <div class="toolbar">
+          <button id="load-open" type="button">Open cases</button>
+          <button id="load-all" type="button">All cases</button>
+        </div>
+      </section>
     </div>
-    <div class="card">
-      <strong>Report #103</strong>
-      <p>Provider reports false booking cancellation.</p>
-      <button>Review</button><button>Escalate</button>
+
+    <div class="grid">
+      <section class="card">
+        <div class="split">
+          <h2>Recent Flagged Messages</h2>
+          <span class="muted">Server-rendered fallback from the current moderation queue</span>
+        </div>
+        {% if flagged_messages %}
+        <div class="grid">
+          {% for item in flagged_messages %}
+          <article class="case">
+            <div><span class="badge open">{{ item.status }}</span><span class="badge {{ item.severity if item.severity else 'low' }}">{{ item.severity if item.severity else 'low' }}</span></div>
+            <p class="muted">{{ item.text }}</p>
+            <p><strong>Reason:</strong> {{ item.reason }}</p>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">No flagged messages to display.</div>
+        {% endif %}
+      </section>
+      <section class="card">
+        <h2>Moderation Cases</h2>
+        <div id="cases" class="cases"></div>
+      </section>
     </div>
   </div>
+
+  <script>
+    const summaryEl = document.getElementById("summary");
+    const casesEl = document.getElementById("cases");
+    const statusEl = document.getElementById("status");
+
+    function badge(cls, text) {
+      return `<span class="badge ${cls}">${text}</span>`;
+    }
+
+    function renderSummary(summary) {
+      summaryEl.innerHTML = `
+        <div class="metric"><strong>${summary.open_cases ?? 0}</strong><span>open cases</span></div>
+        <div class="metric"><strong>${summary.high_severity_open_cases ?? 0}</strong><span>high severity open</span></div>
+        <div class="metric"><strong>${summary.call_cases ?? 0}</strong><span>call-related cases</span></div>
+        <div class="metric"><strong>${summary.message_cases ?? 0}</strong><span>message-related cases</span></div>
+      `;
+    }
+
+    function renderCases(cases) {
+      if (!cases.length) {
+        casesEl.innerHTML = '<div class="empty">No cases to review.</div>';
+        return;
+      }
+      casesEl.innerHTML = cases.map((item) => `
+        <article class="case">
+          <div>${badge(item.status === "open" ? "open" : "closed", item.status)}${badge(item.severity || "low", item.severity || "low")}</div>
+          <h3>Case #${item.id}</h3>
+          <p class="muted">${item.source_text || "No source text recorded."}</p>
+          <p><strong>Reason:</strong> ${item.reason}</p>
+          <p><strong>Resolution note:</strong> ${item.resolution_note || "-"}</p>
+          <form class="form" data-case-id="${item.id}">
+            <select name="status">
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="escalated">Escalated</option>
+              <option value="in_review">In review</option>
+            </select>
+            <textarea name="resolution_note" placeholder="Resolution note"></textarea>
+            <button type="submit">Save resolution</button>
+          </form>
+        </article>
+      `).join("");
+
+      casesEl.querySelectorAll("form[data-case-id]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const caseId = form.getAttribute("data-case-id");
+          const data = Object.fromEntries(new FormData(form).entries());
+          const response = await fetch(`/admin/moderation/cases/${caseId}/resolve`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            statusEl.textContent = payload.detail || `Failed to update case #${caseId}`;
+            return;
+          }
+          statusEl.textContent = `Case #${caseId} updated to ${payload.status}.`;
+          loadCases(currentMode);
+        });
+      });
+    }
+
+    let currentMode = "open";
+
+    async function loadSummary() {
+      const response = await fetch("/admin/moderation/summary");
+      if (!response.ok) {
+        summaryEl.innerHTML = '<div class="empty">Log in as an admin to view moderation summary metrics.</div>';
+        return;
+      }
+      const data = await response.json();
+      renderSummary(data);
+    }
+
+    async function loadCases(mode = "open") {
+      currentMode = mode;
+      const response = await fetch("/admin/moderation/cases");
+      if (response.status === 401 || response.status === 403) {
+        casesEl.innerHTML = '<div class="empty">Log in as an admin to review moderation cases.</div>';
+        statusEl.textContent = "Admin authentication required.";
+        return;
+      }
+      const data = await response.json();
+      const filtered = mode === "open" ? data.filter((item) => item.status === "open") : data;
+      renderCases(filtered);
+    }
+
+    document.getElementById("refresh").addEventListener("click", async () => {
+      await Promise.all([loadSummary(), loadCases(currentMode)]);
+    });
+    document.getElementById("load-open").addEventListener("click", () => loadCases("open"));
+    document.getElementById("load-all").addEventListener("click", () => loadCases("all"));
+
+    loadSummary();
+    loadCases();
+  </script>
 </body>
 </html>

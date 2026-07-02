@@ -5,32 +5,254 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SmartHaul Admin</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #07111f; color: #f8fafc; margin: 0; }
+    body { font-family: "Segoe UI", sans-serif; background: radial-gradient(circle at top, #163047, #07111f 55%); color: #f8fafc; margin: 0; }
     .wrap { max-width: 1100px; margin: 30px auto; padding: 24px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-    .card { background: #111827; padding: 18px; border-radius: 16px; }
+    .card { background: rgba(15, 23, 42, 0.92); padding: 18px; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.16); }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     th, td { padding: 10px; border-bottom: 1px solid #334155; text-align: left; }
+    .muted { color: #94a3b8; }
+    .good { color: #86efac; }
+    .warn { color: #fcd34d; }
+    .bad { color: #fca5a5; }
+    .info { color: #93c5fd; }
+    .alerts { display: grid; gap: 10px; margin-top: 12px; }
+    .alert-item { background: rgba(2, 6, 23, 0.72); border: 1px solid rgba(148, 163, 184, 0.16); border-left: 4px solid #60a5fa; border-radius: 14px; padding: 14px; }
+    .alert-item.high { border-left-color: #ef4444; }
+    .alert-item.medium { border-left-color: #f59e0b; }
+    .alert-item.low { border-left-color: #60a5fa; }
+    .alert-item.ok { border-left-color: #22c55e; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .stack { display: grid; gap: 12px; }
+    .restriction-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+    .field { display: grid; gap: 6px; margin-bottom: 10px; }
+    input, select, textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(51, 65, 85, 0.9); background: #020617; color: #f8fafc; font: inherit; }
+    textarea { min-height: 96px; resize: vertical; }
+    button, .link-button { padding: 10px 14px; border-radius: 10px; border: none; background: #1d4ed8; color: white; cursor: pointer; text-decoration: none; display: inline-block; }
+    pre { margin-top: 14px; padding: 14px; background: #020617; border-radius: 12px; color: #cbd5e1; overflow-x: auto; }
+    .table-wrap { overflow-x: auto; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(29, 78, 216, 0.16); color: #bfdbfe; font-size: 0.82rem; }
+    .helper { font-size: 0.92rem; color: #94a3b8; }
+    .status-line { min-height: 24px; color: #bae6fd; }
+    .user-card { background: rgba(2, 6, 23, 0.72); border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 14px; padding: 14px; display: grid; gap: 8px; }
+    .user-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .danger-button { background: #b91c1c; }
+    @media (max-width: 900px) {
+      .restriction-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h2>SmartHaul Admin Dashboard</h2>
     <div class="grid">
-      <div class="card"><strong>Bookings</strong><br/>Live demand tracking</div>
-      <div class="card"><strong>Providers</strong><br/>Verified service agents</div>
-      <div class="card"><strong>Vendors</strong><br/>Marketplace activity</div>
-      <div class="card"><strong>Reports</strong><br/>Abuse and dispute review</div>
+      <div class="card"><strong>Bookings</strong><br/>{{ metrics.bookings }} total</div>
+      <div class="card"><strong>Vendors</strong><br/>{{ metrics.vendors }} onboarded</div>
+      <div class="card"><strong>Reports</strong><br/>{{ metrics.reports }} filed</div>
+      <div class="card"><strong>Payment Volume</strong><br/>{{ metrics.payment_volume }}</div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>Deployment Status</h3>
+      <table>
+        <tr><th>Check</th><th>Value</th><th>Status</th></tr>
+        <tr><td>Environment</td><td>{{ diagnostics.environment }}</td><td class="good">active</td></tr>
+        <tr><td>Database backend</td><td>{{ diagnostics.database_backend }}</td><td class="good">connected</td></tr>
+        <tr><td>Database target</td><td>{{ diagnostics.database_target }}</td><td class="muted">configured</td></tr>
+        <tr><td>Routing</td><td>{{ diagnostics.routing_provider }}</td><td class="{{ 'good' if diagnostics.routing_configured else 'warn' }}">{{ 'configured' if diagnostics.routing_configured else 'fallback' }}</td></tr>
+        <tr><td>Flutterwave</td><td>{{ 'enabled' if diagnostics.flutterwave_configured else 'disabled' }}</td><td class="{{ 'good' if diagnostics.flutterwave_configured else 'warn' }}">{{ 'configured' if diagnostics.flutterwave_configured else 'sandbox only' }}</td></tr>
+        <tr><td>Bootstrap admin</td><td>{{ diagnostics.bootstrap_admin_email or 'not set' }}</td><td class="{{ 'warn' if diagnostics.bootstrap_admin_configured else 'muted' }}">{{ 'remove after first startup' if diagnostics.bootstrap_admin_configured else 'not configured' }}</td></tr>
+        <tr><td>Pending vendor reviews</td><td>{{ metrics.pending_vendor_reviews }}</td><td class="muted">monitor</td></tr>
+      </table>
+      <div class="actions">
+        <button id="copy-diagnostics">Copy diagnostics JSON</button>
+        <a href="/admin/health" class="link-button">Open protected healthcheck</a>
+        <a href="/admin/monitoring" class="link-button">Open monitoring console</a>
+      </div>
+      <div id="copy-status" class="muted" style="margin-top:10px;">Use the copy action to share exact deployment state without retyping it.</div>
+      <pre id="diagnostics-json">{{ diagnostics_json }}</pre>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>Operational Alerts</h3>
+      <div class="muted">Current monitoring snapshot: {{ monitoring_snapshot.status }} at {{ monitoring_snapshot.checked_at }}</div>
+      <div class="muted" style="margin-top:8px;">{{ monitoring_snapshot.alerts | length }} alert{{ '' if monitoring_snapshot.alerts | length == 1 else 's' }} active</div>
+      <div class="alerts">
+        {% for alert in monitoring_snapshot.alerts[:3] %}
+        <div class="alert-item {{ alert.severity }}">
+          <strong>{{ alert.title }}</strong>
+          <div class="muted">{{ alert.detail }}</div>
+          <div class="muted" style="margin-top:6px;">Severity: {{ alert.severity }}</div>
+        </div>
+        {% else %}
+        <div class="alert-item ok">
+          <strong>No active alerts</strong>
+          <div class="muted">All monitored queues are currently clear.</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="muted" style="margin-top:10px;">Open the monitoring console for the full queue and escalation breakdown.</div>
     </div>
     <div class="card" style="margin-top:16px;">
       <h3>Recent activity</h3>
-      <table>
-        <tr><th>Type</th><th>Status</th><th>Owner</th></tr>
-        <tr><td>Booking</td><td>Pending</td><td>Customer A</td></tr>
-        <tr><td>Vendor</td><td>Active</td><td>Urban Logistics Hub</td></tr>
-        <tr><td>Report</td><td>Under review</td><td>User 203</td></tr>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Type</th><th>Status</th><th>Detail</th></tr>
+          {% for item in recent_audit %}
+          <tr><td>{{ item.type }}</td><td>{{ item.status }}</td><td>{{ item.detail }}</td></tr>
+          {% else %}
+          <tr><td colspan="3" class="muted">No recent activity yet.</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <h3>Account restrictions</h3>
+      <div class="muted">Restrict a user by ID, or restore an account back to active status. Restricted accounts are blocked from login immediately.</div>
+      <div class="restriction-layout">
+        <div class="stack">
+          <div>
+            <span class="pill">Restricted users</span>
+            <div class="helper" style="margin-top:8px;">Live list from the protected restriction endpoint.</div>
+          </div>
+          <div id="restricted-users" class="stack">
+            <div class="user-card muted">Loading restricted accounts...</div>
+          </div>
+        </div>
+        <div>
+          <span class="pill">Update restriction</span>
+          <div class="helper" style="margin-top:8px;">Use a valid user ID, choose active or restricted, and provide a reason when restricting.</div>
+          <form id="restriction-form" style="margin-top:12px;">
+            <div class="field">
+              <label for="restriction-user-id">User ID</label>
+              <input id="restriction-user-id" name="user_id" type="number" min="1" placeholder="e.g. 42" required />
+            </div>
+            <div class="field">
+              <label for="restriction-account-status">Account status</label>
+              <select id="restriction-account-status" name="account_status">
+                <option value="restricted">Restricted</option>
+                <option value="active">Active</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="restriction-reason">Reason</label>
+              <textarea id="restriction-reason" name="reason" placeholder="Explain why this account is being restricted or restored"></textarea>
+            </div>
+            <button type="submit">Apply restriction update</button>
+          </form>
+          <div id="restriction-status" class="status-line" style="margin-top:10px;"></div>
+        </div>
+      </div>
     </div>
   </div>
+  <script>
+    const copyButton = document.getElementById("copy-diagnostics");
+    const copyStatus = document.getElementById("copy-status");
+    const diagnosticsJson = document.getElementById("diagnostics-json").textContent;
+    const restrictionForm = document.getElementById("restriction-form");
+    const restrictionStatus = document.getElementById("restriction-status");
+    const restrictedUsers = document.getElementById("restricted-users");
+    const restrictionReason = document.getElementById("restriction-reason");
+    const restrictionAccountStatus = document.getElementById("restriction-account-status");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderRestrictedUsers(users) {
+      if (!users.length) {
+        restrictedUsers.innerHTML = '<div class="user-card"><strong>No restricted accounts</strong><div class="muted">All accounts are currently active.</div></div>';
+        return;
+      }
+
+      restrictedUsers.innerHTML = users.map((user) => `
+        <div class="user-card">
+          <div class="user-meta">
+            <span class="pill">ID ${escapeHtml(user.id)}</span>
+            <span class="pill">${escapeHtml(user.role)}</span>
+            <span class="pill">${escapeHtml(user.account_status)}</span>
+          </div>
+          <strong>${escapeHtml(user.name)}</strong>
+          <div class="muted">${escapeHtml(user.email)}</div>
+          <div class="muted">Reason: ${escapeHtml(user.account_restriction_reason || "No reason recorded")}</div>
+          <div class="muted">Restricted at: ${escapeHtml(user.account_restricted_at || "n/a")}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadRestrictedUsers() {
+      try {
+        const response = await fetch("/admin/users/restricted");
+        if (!response.ok) {
+          throw new Error("Unable to load restricted users");
+        }
+        const users = await response.json();
+        renderRestrictedUsers(users);
+      } catch (error) {
+        restrictedUsers.innerHTML = `<div class="user-card"><strong class="bad">Restriction list unavailable</strong><div class="muted">${escapeHtml(error.message)}</div></div>`;
+      }
+    }
+
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(diagnosticsJson);
+        copyStatus.textContent = "Diagnostics JSON copied to clipboard.";
+        copyStatus.className = "good";
+      } catch (error) {
+        copyStatus.textContent = "Clipboard copy failed in this browser. You can still copy from the JSON block below.";
+        copyStatus.className = "warn";
+      }
+    });
+
+    restrictionAccountStatus.addEventListener("change", () => {
+      if (restrictionAccountStatus.value === "restricted" && !restrictionReason.value.trim()) {
+        restrictionReason.placeholder = "Explain the policy issue or safety concern";
+      }
+      if (restrictionAccountStatus.value === "active") {
+        restrictionReason.placeholder = "Optional note for restoring access";
+      }
+    });
+
+    restrictionForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(restrictionForm);
+      const userId = formData.get("user_id");
+      const payload = {
+        account_status: formData.get("account_status"),
+        reason: formData.get("reason") || "",
+      };
+
+      if (payload.account_status === "restricted" && !payload.reason.trim()) {
+        restrictionStatus.textContent = "A restriction reason is required before restricting an account.";
+        restrictionStatus.className = "status-line bad";
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/users/${userId}/restriction`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Restriction update failed");
+        }
+        restrictionStatus.textContent = `Account ${data.email} updated to ${data.account_status}.`;
+        restrictionStatus.className = "status-line good";
+        restrictionForm.reset();
+        restrictionReason.placeholder = "Explain why this account is being restricted or restored";
+        await loadRestrictedUsers();
+      } catch (error) {
+        restrictionStatus.textContent = error.message;
+        restrictionStatus.className = "status-line bad";
+      }
+    });
+
+    loadRestrictedUsers();
+  </script>
 </body>
 </html>

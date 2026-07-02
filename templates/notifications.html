@@ -13,9 +13,16 @@
 <body>
   <div class="wrap">
     <h2>Notifications Center</h2>
-    <div class="item">New booking request received from customer.</div>
-    <div class="item">Vendor updated service availability.</div>
-    <div class="item">Safety report escalated for review.</div>
+    {% if notifications %}
+      {% for item in notifications %}
+        <div class="item">
+          <strong>{{ item.title }}</strong>
+          <div>{{ item.message }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="item">No notifications yet.</div>
+    {% endif %}
   </div>
 </body>
 </html>
