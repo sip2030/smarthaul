@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r django_smarthaul/requirements.txt && python django_smarthaul/manage.py collectstatic --noinput && python django_smarthaul/manage.py migrate --noinput
-    startCommand: gunicorn --chdir django_smarthaul config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn --chdir django_smarthaul config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120
     autoDeploy: true
     envVars:
       - key: SECRET_KEY
