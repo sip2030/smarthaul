@@ -1,8 +1,56 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
-from database import create_admin_user, init_db
+
+BASE_DIR = Path(__file__).resolve().parent
+DJANGO_DIR = BASE_DIR / "django_smarthaul"
+if str(DJANGO_DIR) not in sys.path:
+    sys.path.insert(0, str(DJANGO_DIR))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+import django  # noqa: E402
+from django.contrib.auth import get_user_model  # noqa: E402
+
+
+def init_db() -> None:
+    django.setup()
+
+
+def create_admin_user(name: str, email: str, password: str, update_existing: bool = False) -> tuple[bool, str]:
+    User = get_user_model()
+    if not email:
+        return False, "Admin email is required."
+    if not password:
+        return False, "Admin password is required."
+
+    user = User.objects.filter(email=email).first()
+    if user is None:
+        user = User(
+            username=email,
+            email=email,
+            first_name=name,
+            role="admin",
+            is_staff=True,
+            is_superuser=True,
+        )
+        user.set_password(password)
+        user.save()
+        return True, f"Created admin account for {email}."
+
+    if update_existing:
+        user.username = user.username or email
+        user.first_name = name
+        user.role = "admin"
+        user.is_staff = True
+        user.is_superuser = True
+        user.set_password(password)
+        user.save()
+        return True, f"Updated admin account for {email}."
+
+    return False, f"Admin account already exists for {email}. Use --update-existing to refresh it."
 
 
 def parse_args() -> argparse.Namespace:

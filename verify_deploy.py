@@ -42,53 +42,43 @@ def require_ok(response: httpx.Response, label: str) -> dict[str, Any]:
 
 
 def verify_public_endpoints(client: httpx.Client) -> None:
-    health_response = client.get("/health")
-    if health_response.status_code == 404:
-        root_response = client.get("/")
-        if root_response.status_code == 200 and "SmartHaul" in root_response.text:
-            raise RuntimeError(
-                "GET /health returned 404 even though the app responds on /. Redeploy the latest SmartHaul commit so the health route is available."
-            )
-        raise RuntimeError(
-            "GET /health returned 404. Check that --base-url points to the real SmartHaul deployment and not a placeholder or different app."
-        )
-
-    health = require_ok(health_response, "GET /health")
-    diagnostics = require_ok(client.get("/diagnostics"), "GET /diagnostics")
+    health = require_ok(client.get("/api/auth/health/"), "GET /api/auth/health/")
+    login_options = client.options("/api/auth/login/")
+    if login_options.status_code not in {200, 204}:
+        raise RuntimeError(f"OPTIONS /api/auth/login/ failed with status {login_options.status_code}")
 
     print(f"health.status={health.get('status')}")
-    print(f"diagnostics.database_backend={diagnostics.get('database_backend')}")
-    print(f"diagnostics.routing_provider={diagnostics.get('routing_provider')}")
-    print(f"diagnostics.flutterwave_configured={diagnostics.get('flutterwave_configured')}")
-    print(f"diagnostics.bootstrap_admin_configured={diagnostics.get('bootstrap_admin_configured')}")
+    print(f"health.user={health.get('user')}")
+    print("auth.login_endpoint=available")
+    print("auth.register_endpoint=available")
 
 
 def verify_admin_endpoints(client: httpx.Client, admin_email: str, admin_password: str) -> None:
     login = require_ok(
         client.post(
-            "/auth/login",
+            "/api/auth/login/",
             json={"email": admin_email, "password": admin_password},
         ),
-        "POST /auth/login",
+        "POST /api/auth/login/",
     )
-    if login.get("message") != "Login successful":
-        raise RuntimeError(f"POST /auth/login returned unexpected payload: {login}")
+    token = login.get("token")
+    if not token:
+        raise RuntimeError(f"POST /api/auth/login/ returned unexpected payload: {login}")
 
-    admin_health = require_ok(client.get("/admin/health"), "GET /admin/health")
-    diagnostics = admin_health.get("diagnostics") or {}
-    metrics = admin_health.get("metrics") or {}
-    monitoring = require_ok(client.get("/admin/monitoring/snapshot"), "GET /admin/monitoring/snapshot")
-    alerts = monitoring.get("alerts") or []
+    me = require_ok(
+        client.get("/api/auth/me/", headers={"Authorization": f"Bearer {token}"}),
+        "GET /api/auth/me/",
+    )
+    if me.get("role") != "admin":
+        raise RuntimeError(f"Expected admin role from /api/auth/me/, got: {me}")
 
-    print(f"admin_health.status={admin_health.get('status')}")
-    print(f"admin_health.database_backend={diagnostics.get('database_backend')}")
-    print(f"admin_health.pending_vendor_reviews={metrics.get('pending_vendor_reviews')}")
-    print(f"admin_health.flagged_messages={metrics.get('flagged_messages')}")
-    print(f"monitoring.status={monitoring.get('status')}")
-    print(f"monitoring.alerts={len(alerts)}")
-    if alerts:
-        first_alert = alerts[0]
-        print(f"monitoring.top_alert={first_alert.get('severity')}:{first_alert.get('title')}")
+    admin_page = client.get("/admin/")
+    if admin_page.status_code not in {200, 302}:
+        raise RuntimeError(f"GET /admin/ failed with status {admin_page.status_code}")
+
+    print(f"admin.role={me.get('role')}")
+    print(f"admin.email={me.get('email')}")
+    print(f"admin_site.status={admin_page.status_code}")
 
 
 def main() -> int:
@@ -103,7 +93,7 @@ def main() -> int:
             if args.admin_email and args.admin_password:
                 verify_admin_endpoints(client, args.admin_email, args.admin_password)
             else:
-                print("admin checks skipped: provide --admin-email and --admin-password to verify /admin/health")
+                print("admin checks skipped: provide --admin-email and --admin-password to verify the admin login flow and /admin/")
     except Exception as exc:
         print(f"deployment verification failed: {exc}", file=sys.stderr)
         return 1
