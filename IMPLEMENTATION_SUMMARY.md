@@ -197,7 +197,7 @@ SmartHaul MVP has been **successfully completed and validated** for production d
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │   Frontend   │    │   FastAPI    │    │  PostgreSQL  │  │
+│  │   Frontend   │    │   Django     │    │  PostgreSQL  │  │
 │  │  (Jinja2)    │───▶│  Backend     │───▶│  Database    │  │
 │  └──────────────┘    └──────────────┘    └──────────────┘  │
 │                             │                      ▲         │

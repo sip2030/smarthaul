@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-SmartHaul MVP is a **production-ready transportation management platform** built with FastAPI, featuring complete booking management, vendor coordination, real-time tracking, and comprehensive monitoring. The platform has been fully tested, documented, and is ready for immediate deployment.
+SmartHaul MVP is a **production-ready transportation management platform** built with Django/DRF, featuring complete booking management, vendor coordination, real-time tracking, and comprehensive monitoring. The platform has been fully tested, documented, and is ready for immediate deployment.
 
 ### Key Metrics
 - **54+ API Endpoints** - Fully documented and tested
@@ -71,7 +71,7 @@ SmartHaul MVP is a **production-ready transportation management platform** built
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| **Backend** | FastAPI | 0.100+ |
+| **Backend** | Django/DRF | 4.2+ |
 | **Python** | Python | 3.10+ |
 | **Database** | PostgreSQL (prod) / SQLite (dev) | 15+ |
 | **Authentication** | JWT + Session | - |
@@ -89,7 +89,7 @@ SmartHaul MVP is a **production-ready transportation management platform** built
 ```
 OS: Windows/Linux/macOS
 Database: SQLite (smarthaul.db)
-Runtime: uvicorn dev server
+Runtime: Django dev server
 Testing: All 187 tests passing
 ```
 
@@ -277,7 +277,7 @@ git push origin main
 # Render auto-deploys via CI/CD
 
 # Or manual deploy
-python -m uvicorn app:app --host 0.0.0.0 --port $PORT
+python django_smarthaul/manage.py runserver 0.0.0.0:8001
 ```
 
 ### 3. Post-deployment

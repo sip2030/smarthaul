@@ -140,7 +140,7 @@ Before deploying, remember:
 ## 🎯 What You Have
 
 ### Production Code
-- ✅ Complete FastAPI backend
+- ✅ Complete Django/DRF backend
 - ✅ PostgreSQL database layer
 - ✅ Authentication & authorization
 - ✅ Rate limiting & security
@@ -213,7 +213,7 @@ When you deploy, you're getting:
 
 ```
 Production Infrastructure:
-├─ FastAPI Backend (Python 3.10+)
+├─ Django/DRF Backend (Python 3.10+)
 ├─ PostgreSQL Database
 ├─ Redis Cache (optional)
 ├─ Automated Backups

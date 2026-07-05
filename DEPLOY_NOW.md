@@ -31,8 +31,8 @@ be89182 (HEAD -> master) SmartHaul MVP v1.0.0 - Production Ready Deployment
 3. Create Web Service
 4. Select: sip2030/smarthaul repository
 5. Branch: master
-6. Build: pip install -r requirements-free.txt
-7. Start: uvicorn app:app --host 0.0.0.0 --port $PORT
+6. Build: pip install -r django_smarthaul/requirements.txt
+7. Start: cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
 **Cost:** ~$21/month (or free tier for testing)
@@ -113,7 +113,7 @@ BOOTSTRAP_ADMIN_PASSWORD=<STRONG TEMPORARY PASSWORD>
 In the Logs section, you should see:
 ```
 === Installing dependencies ===
-pip install -r requirements-free.txt
+pip install -r django_smarthaul/requirements.txt
 
 === Starting application ===
 Application startup complete

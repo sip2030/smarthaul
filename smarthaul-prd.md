@@ -412,13 +412,15 @@ SmartHaul is a future-ready platform for transportation, logistics, vendors, and
 
 ## 20. Current Implementation Status
 
+The verified backend implementation for SmartHaul is the Django/DRF app under [django_smarthaul/](django_smarthaul/).
+
 The prototype now includes the main MVP surfaces described in this PRD:
 - Public landing, auth, workspace, admin, provider, vendor, support, moderation, messaging, tracking, analytics, map, calls, and chatbot pages
 - SQLite-backed bookings, vendors, providers, quotes, notifications, messages, payments, refunds, disputes, and reports
 - Session-based authentication with role checks for protected areas
 - Booking lifecycle updates, feedback collection, and tracking lookups
 - Rule-based AI support and escalation guidance
-- Free-tier Render deployment configuration
+- Free-tier Django/DRF deployment configuration
 
 Verified state:
 - The current codebase passes 18 automated tests locally
@@ -431,7 +433,7 @@ Remaining next steps:
 ## 21. Launch Checklist
 
 Priority 1:
-- Confirm the Render deployment path end to end
+- Confirm the Django/DRF deployment path end to end
 - Keep the current test suite green before each release
 - Validate the core customer booking flow in the deployed environment
 

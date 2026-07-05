@@ -2,6 +2,8 @@
 
 SmartHaul is a launch-ready MVP prototype for a future-ready mobility, haulage, marketplace, and AI support platform.
 
+The verified backend path in this workspace is the Django/DRF app in [django_smarthaul/](django_smarthaul/), which was tested locally on `http://localhost:8001/`.
+
 ## Current MVP features
 - Booking flow for rides and haulage with lifecycle states
 - Session-based authentication with password policy, lockout protection, password rotation, stale-session invalidation, and protected dashboard access
@@ -21,24 +23,26 @@ SmartHaul is a launch-ready MVP prototype for a future-ready mobility, haulage, 
 ### Backend
 ```bash
 python -m pip install -r requirements.txt
-uvicorn app:app --reload
+python django_smarthaul/manage.py runserver 0.0.0.0:8001
 ```
 
 Then open:
-- http://127.0.0.1:8000/ for the landing experience
-- http://127.0.0.1:8000/docs for the API docs
-- http://127.0.0.1:8000/workspace for the workspace experience
-- http://127.0.0.1:8000/notifications-page for the notifications view
-- http://127.0.0.1:8000/admin for the admin dashboard, deployment status table, and copyable diagnostics block
+- http://127.0.0.1:8001/api/auth/health/ for the API health check
+- http://127.0.0.1:8001/api/auth/register/ for registration
+- http://127.0.0.1:8001/api/auth/login/ for login
+- http://127.0.0.1:8001/api/bookings/ for booking APIs
+- http://127.0.0.1:8001/admin for the Django admin site
 
 ## Free-tier deployment
-Use the lightweight dependency file [requirements-free.txt](requirements-free.txt) if you want a simpler deployment target.
+Use the verified Django dependency file [django_smarthaul/requirements.txt](django_smarthaul/requirements.txt) for deployment.
 See [README_DEPLOY.md](README_DEPLOY.md) for hosting instructions.
 
 ### Tests
 ```bash
 pytest -q
 ```
+
+Generated local cache folders such as `.pytest_cache/` and `__pycache__/` are ignored by Git and may reappear after running tests or Python modules locally.
 
 ### Flutterwave setup
 Configure these environment variables to enable real payment initialization and verification:
@@ -62,9 +66,9 @@ If these variables are not set, the app continues using the simulated route engi
 To move persistence off SQLite, set `DATABASE_URL` to a PostgreSQL connection string. When `DATABASE_URL` starts with `postgres://` or `postgresql://`, the app automatically uses PostgreSQL and ignores `DATABASE_PATH`.
 
 ### Admin diagnostics
-Authenticated admins can use `/admin` for a browser-facing deployment status view and `/admin/health` for a protected JSON healthcheck that reports the active backend and integration state.
+Authenticated admins can use `/admin` for the Django admin site. The Django API also exposes `/api/auth/health/` for a public healthcheck and `/api/auth/me/` for authenticated profile inspection.
 
-For deeper operational visibility, `/admin/monitoring` and `/admin/monitoring/snapshot` expose queue depth, safety signals, and the active alert set.
+For deeper operational visibility, continue using the deployment docs in [README_DEPLOY.md](README_DEPLOY.md).
 
 If you want to verify a deployment from the command line, use `verify_deploy.py` with the real public base URL and optional admin credentials.
 
@@ -80,7 +84,7 @@ python manage_admin.py --email admin@example.com --password StrongAdmin123 --nam
 To rotate an existing admin password, add `--update-existing`.
 
 ### Verified status
-The current implementation has been verified with 36 passing tests.
+The Django backend has been verified locally with auth, booking, vendor, provider, and payment flows.
 
 ### Launch decisions
 The current recommended launch path is documented in [SMARTHAUL_DECISIONS_DRAFT.md](SMARTHAUL_DECISIONS_DRAFT.md). In short:

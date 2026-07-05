@@ -56,8 +56,8 @@ git remote -v
 4. Click "New" → "Web Service"
 5. Select your smarthaul repository
 6. Select branch: main
-7. Configure build: pip install -r requirements-free.txt
-8. Configure start: uvicorn app:app --host 0.0.0.0 --port $PORT
+7. Configure build: pip install -r django_smarthaul/requirements.txt
+8. Configure start: cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
 ### Step 4: Add Environment Variables (5 min)
@@ -260,8 +260,8 @@ In the configuration form:
 Service Name: smarthaul
 Environment: Python 3
 Region: Choose closest to users
-Build Command: pip install -r requirements-free.txt
-Start Command: uvicorn app:app --host 0.0.0.0 --port $PORT
+Build Command: pip install -r django_smarthaul/requirements.txt
+Start Command: cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 Plan: Free (upgrade later)
 ```
 
@@ -339,10 +339,10 @@ In Render Dashboard:
 **Expected Build Steps:**
 ```
 === Building your project ===
-pip install -r requirements-free.txt
+pip install -r django_smarthaul/requirements.txt
 
 === Starting app ===
-uvicorn app:app --host 0.0.0.0 --port {PORT}
+cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:{PORT}
 ```
 
 #### 4.2: Verify Deployment
@@ -465,15 +465,15 @@ git push origin main
 ### Issue: "Service Dead - Build Failed"
 
 **Check these:**
-1. Build command is correct: `pip install -r requirements-free.txt`
-2. Start command is correct: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+1. Build command is correct: `pip install -r django_smarthaul/requirements.txt`
+2. Start command is correct: `cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
 3. requirements.txt has all dependencies
 4. No syntax errors in app.py: Run locally first: `python app.py`
 
 **Fix:**
 ```powershell
 # Test locally
-python -m uvicorn app:app --host 0.0.0.0 --port 8000
+python django_smarthaul/manage.py runserver 0.0.0.0:8001
 
 # Should see: "Application startup complete"
 
@@ -566,7 +566,7 @@ git remote -v
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 # Test app locally
-python -m uvicorn app:app --host 0.0.0.0 --port 8000
+python django_smarthaul/manage.py runserver 0.0.0.0:8001
 
 # Test health endpoint (after deployment)
 curl https://smarthaul.onrender.com/health
@@ -658,7 +658,8 @@ After successful deployment:
 ## Support Resources
 
 - **Render Docs:** https://render.com/docs
-- **FastAPI Docs:** https://fastapi.tiangolo.com
+- **Django Docs:** https://docs.djangoproject.com/
+- **DRF Docs:** https://www.django-rest-framework.org/
 - **PostgreSQL Docs:** https://www.postgresql.org/docs
 - **SmartHaul Docs:** See README_DEPLOY.md, ADMIN_WALKTHROUGH.md
 

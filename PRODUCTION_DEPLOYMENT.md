@@ -61,8 +61,8 @@ Complete these steps BEFORE deploying to production:
 3. Create new Web Service
 4. Connect GitHub repository
 5. Select branch: `main`
-6. Build command: `pip install -r requirements-free.txt`
-7. Start command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+6. Build command: `pip install -r django_smarthaul/requirements.txt`
+7. Start command: `cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
 
 ### Option B: Railway (Fast Setup)
 
@@ -288,8 +288,8 @@ If not using GitHub Actions:
 3. Connect to GitHub repository
 4. Select branch: `main`
 5. Configure:
-   - Build command: `pip install -r requirements-free.txt`
-   - Start command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+  - Build command: `pip install -r django_smarthaul/requirements.txt`
+  - Start command: `cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
 6. Add environment variables
 7. Click "Deploy"
 
