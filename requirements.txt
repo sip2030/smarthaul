@@ -1,6 +1,3 @@
-fastapi
-uvicorn
+-r django_smarthaul/requirements.txt
 pytest
 httpx
-jinja2
-psycopg[binary]
