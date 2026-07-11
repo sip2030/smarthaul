@@ -19,14 +19,14 @@ For local validation during this assignment, the Django server was confirmed wor
 
 ## Deploy steps
 1. Push the project to GitHub.
-2. Create a new web service on Render.
-3. Render will use [render.yaml](render.yaml) automatically.
-4. Set `SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and `APP_BASE_URL` in the service environment.
-5. Attach PostgreSQL and set `DATABASE_URL` for persistent production data.
+2. Create a PostgreSQL service first in Render and keep the `DATABASE_URL` handy.
+3. Create a new web service on Render from `sip2030/smarthaul`.
+4. Render will use [render.yaml](render.yaml) automatically.
+5. Set required env vars: `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `APP_BASE_URL`, `DATABASE_URL`.
 6. Optional: set `FLUTTERWAVE_SECRET_KEY` and `FLUTTERWAVE_WEBHOOK_SECRET_HASH` to enable real payment collection.
 7. Optional: set `ROUTING_PROVIDER=openrouteservice` and add `OPENROUTESERVICE_API_KEY` to enable provider-backed routing.
-8. Optional: set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` only for first startup if you want automatic admin seeding.
-9. Deploy.
+8. Deploy and wait for migration + gunicorn startup logs.
+9. Verify with `python verify_deploy.py --base-url https://your-real-service.onrender.com`.
 
 ### One-shot admin creation
 If you do not want to leave bootstrap admin credentials in deployment environment variables, create an admin once with:
@@ -36,14 +36,18 @@ python manage_admin.py --email admin@example.com --password StrongAdmin123 --nam
 ```
 
 ### Manual Render settings
-- Build command: `pip install -r django_smarthaul/requirements.txt`
-- Start command: `cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
-- Required env vars: `SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `APP_BASE_URL`
-- Preferred database env var: `DATABASE_URL=postgresql://...`
+- Build command: `pip install -r django_smarthaul/requirements.txt && python django_smarthaul/manage.py collectstatic --noinput && python django_smarthaul/manage.py migrate --noinput`
+- Start command: `gunicorn --chdir django_smarthaul config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120`
+- Required env vars: `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `APP_BASE_URL`, `DATABASE_URL`
 - Optional database env var: `DATABASE_PATH=/var/data/smarthaul.db` when you have persistent disk storage available
 - Optional payment env vars: `FLUTTERWAVE_SECRET_KEY`, `FLUTTERWAVE_WEBHOOK_SECRET_HASH`
 - Optional routing env vars: `ROUTING_PROVIDER=openrouteservice`, `OPENROUTESERVICE_API_KEY`
-- Optional bootstrap admin env vars: `BOOTSTRAP_ADMIN_NAME`, `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`
+
+### Recommended Render env values
+- `DEBUG=False`
+- `ALLOWED_HOSTS=.onrender.com,smarthaul.onrender.com`
+- `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com`
+- `APP_BASE_URL=https://your-real-service.onrender.com`
 
 ## Post-deploy verification
 1. Confirm `/api/auth/health/` returns `200`.

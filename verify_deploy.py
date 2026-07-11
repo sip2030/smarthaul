@@ -31,6 +31,14 @@ def validate_base_url(base_url: str) -> str:
 def require_ok(response: httpx.Response, label: str) -> dict[str, Any]:
     if response.status_code != 200:
         if response.status_code == 404:
+            server = (response.headers.get("server") or "").lower()
+            body_preview = response.text.strip()[:120].lower()
+            if "cloudflare" in server and body_preview.startswith("not found"):
+                raise RuntimeError(
+                    f"{label} failed with edge 404 from Render/Cloudflare. "
+                    "This URL is not currently mapped to a live SmartHaul web service in your Render account/workspace. "
+                    "Open Render Dashboard, find the web service, copy its exact onrender URL, and retry with that URL."
+                )
             raise RuntimeError(
                 f"{label} failed with status 404. Check that --base-url points to the real SmartHaul deployment and not a placeholder or different app."
             )
