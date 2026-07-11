@@ -18,7 +18,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://smarthaul_db_wim9_user:wkmOn7vVqtS9k6AbaDRxVNSI47pSAKKX@dpg-d9973h9o3t8c73f003v0-a/smarthaul_db_wim9
       - key: DATABASE_PATH
         sync: false
       - key: APP_BASE_URL
