@@ -37,7 +37,7 @@ python manage_admin.py --email admin@example.com --password StrongAdmin123 --nam
 
 ### Manual Render settings
 - Build command: `pip install -r django_smarthaul/requirements.txt && python django_smarthaul/manage.py collectstatic --noinput && python django_smarthaul/manage.py migrate --noinput`
-- Start command: `bash -c "cd django_smarthaul && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120"`
+- Start command: `gunicorn --chdir django_smarthaul config.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120`
 - Required env vars: `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `APP_BASE_URL`, `DATABASE_URL`
 - Optional database env var: `DATABASE_PATH=/var/data/smarthaul.db` when you have persistent disk storage available
 - Optional payment env vars: `FLUTTERWAVE_SECRET_KEY`, `FLUTTERWAVE_WEBHOOK_SECRET_HASH`
