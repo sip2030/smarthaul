@@ -17,7 +17,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-pro
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # ALLOWED_HOSTS - Allow common development, test, and Render hostnames
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost,testserver,*.onrender.com,smarthaul.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost,testserver,.onrender.com,smarthaul-059r.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Application definition
 INSTALLED_APPS = [
@@ -74,6 +74,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 _DATABASE_URL = config('DATABASE_URL', default='')
 if _DATABASE_URL:
     DATABASES = {'default': dj_database_url.parse(_DATABASE_URL, conn_max_age=600)}
+    # Add connection timeout to prevent gunicorn workers from hanging
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
