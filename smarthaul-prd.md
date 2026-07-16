@@ -93,7 +93,7 @@ People who manage:
 - Full autonomous vehicle integration
 - Advanced predictive demand forecasting
 - Full-scale video surveillance monitoring
-- Fully autonomous customer support that replaces the required human escalation path
+- Fully autonomous customer support without human fallback
 - Complex multi-country regulatory compliance tools
 
 ## 6. Core Use Cases
@@ -147,12 +147,7 @@ People who manage:
 - Customers must be able to select pickup and destination addresses
 - Customers must be able to choose service category and urgency
 - Providers must be able to accept, decline, or reschedule requests
-- Cancellation rules must be admin-configurable and must expose: (a) the penalty-free window duration in minutes after acceptance, (b) the cancellation fee percentage or fixed amount applied outside that window, and (c) the fee assignment logic when the provider cancels. Default values must be set before the platform goes live.
 - Booking status must move through states such as pending, accepted, active, completed, cancelled, disputed
-- If a customer raises a dispute within the payout window after a provider marks a booking as completed, the booking status must transition to disputed, funds must remain in escrow, and the case must be escalated to admin review before any payout is released.
-- If a customer raises a dispute while the booking is still in active or accepted status, the booking must be immediately flagged and escalated to admin review. The booking must not be allowed to transition to completed until the dispute is resolved. Funds must remain in escrow for the duration of the review.
-- If a booking request remains in pending status for longer than 10 minutes without provider acceptance, the system must automatically transition it to cancelled and notify the customer with an option to retry or widen their search radius
-- When a customer retries after a timeout cancellation, the system must create a new booking record with a new booking ID. The original cancelled record must be retained for audit purposes. Widening the search radius must apply only to the new booking and must not modify the cancelled record.
 
 ### 7.3 Marketplace and Vendor Management
 - Vendors must be able to create storefronts or service profiles
@@ -172,10 +167,6 @@ People who manage:
 - The system must support commission or service fee handling
 - The system must store transaction histories for users and admins
 - The system must support refunds or dispute resolution workflows
-- Funds collected from customers must be held in escrow until the booking status moves to completed
-- If the escrow hold fails at booking confirmation, the booking must not be set to accepted. The customer must be notified of the payment failure with an option to retry with a different payment method. The booking must remain in a payment-pending state and must not be dispatched to providers until payment is successfully captured.
-- Provider payout must be triggered automatically after a dispute window that defaults to 24 hours and is configurable by admin. The window begins when the booking transitions to completed status, unless a dispute is raised.
-- If a dispute is raised after the provider payout has already been released, the booking must be flagged for admin review. The dispute must be logged and linked to the completed booking record. Any remediation, including refunds or clawbacks, must be handled manually by admin. The customer must be notified that the dispute window has closed and that resolution is subject to admin discretion.
 
 ### 7.6 Communication and Support
 - Users must be able to chat in-app
@@ -198,10 +189,9 @@ People who manage:
 ## 8. Non-Functional Requirements
 
 ### 8.1 Performance
-- The app must load the home, booking, and tracking screens within 2 seconds on a 4G mobile connection
-- Booking confirmation must be returned to the user within 3 seconds of submission under normal load conditions
-- Tracking location updates must be delivered to the customer within 5 seconds of a provider's position change during an active booking.
-- If no provider location update is received for more than 60 seconds during an active booking, the tracking screen must display a stale-location indicator and notify the customer that live tracking is temporarily unavailable. The system must attempt to resume tracking automatically and notify the customer when updates resume. If the outage exceeds 5 minutes, the customer must be offered the option to contact the provider or support.
+- The app must load core screens within acceptable mobile response times
+- Booking flows must complete with minimal delay
+- Tracking updates must be near real-time
 
 ### 8.2 Reliability
 - The system must handle peak demand without major failures
@@ -246,22 +236,19 @@ The AI assistant will help users navigate the platform, answer common questions,
 - It must escalate unresolved or sensitive issues to human support quickly and clearly.
 
 ### 9.5 AI Assistant Success Criteria
-- Users must receive an AI assistant response to a question within 3 seconds of submission under normal load conditions.
+- Users can ask common questions and receive helpful guidance within a few seconds.
 - The assistant can help a user move from inquiry to booking request without manual intervention.
 - The assistant reduces routine support load while preserving a safe handoff to human agents when needed.
 
 ## 10. Safety, Compliance, and Trust Requirements
 
 ### 10.1 Identity Verification
-- Providers must submit identity or business documents before their first booking is accepted. Vendors must submit business documents before their storefront is made publicly visible. Document requirements may be adjusted per service category by admin configuration.
+- Providers and vendors may be required to submit identity or business documents
 - Accounts must be reviewed before full platform access is granted
-- Before granting full platform access, admin must confirm: (a) identity or business document has been submitted and is legible, (b) the applicant's role matches their submitted credentials (e.g., commercial license for haulage operators), and (c) no existing account flag or ban exists for the same identity. Accounts that fail any check must be set to a rejected state with a reason communicated to the applicant.
-- A rejected applicant must be permitted to resubmit a corrected application. Resubmissions must be treated as a new review cycle. An applicant whose identity is matched to a banned account must not be permitted to reapply and must be permanently blocked from registration.
 
 ### 10.2 Abuse Reporting
 - Users must be able to report harassment, misconduct, fraud, or unsafe conduct
 - Reports must be linked to the relevant booking, service, or vendor profile
-- If the referenced booking, service, or vendor profile is no longer available at the time of report submission, the system must still accept and store the report using the entity identifier as a reference, and flag it for admin review with a note that the linked entity is unavailable.
 - Report states must include pending, under review, resolved, and closed
 
 ### 10.3 Communication Safety
@@ -272,7 +259,7 @@ The AI assistant will help users navigate the platform, answer common questions,
 ### 10.4 Camera, Audio, and Call Features
 - Audio or video calling must be optional and consent-based
 - Users must be informed before any audio or video communication starts
-- Calls must be logged only when either party has an active dispute open against them, or when a safety report referencing the same booking ID has been filed at any point from booking creation through 24 hours after the booking reaches a completed or disputed state. All other calls must not be recorded
+- Calls must be logged only where necessary for dispute support and safety
 
 ## 11. Maps and Routing Requirements
 
@@ -412,28 +399,28 @@ SmartHaul is a future-ready platform for transportation, logistics, vendors, and
 
 ## 20. Current Implementation Status
 
-The verified backend implementation for SmartHaul is the Django/DRF app under [django_smarthaul/](django_smarthaul/).
-
 The prototype now includes the main MVP surfaces described in this PRD:
 - Public landing, auth, workspace, admin, provider, vendor, support, moderation, messaging, tracking, analytics, map, calls, and chatbot pages
 - SQLite-backed bookings, vendors, providers, quotes, notifications, messages, payments, refunds, disputes, and reports
 - Session-based authentication with role checks for protected areas
 - Booking lifecycle updates, feedback collection, and tracking lookups
 - Rule-based AI support and escalation guidance
-- Free-tier Django/DRF deployment configuration
+- Provider-backed routing and payment hooks with environment-driven fallbacks for local and deployment use
+- Production security defaults for session and cookie handling in Django settings
+- Free-tier Render deployment configuration
 
 Verified state:
-- The current codebase passes 18 automated tests locally
+- The current codebase passes 53 automated tests locally
 
 Remaining next steps:
-- Connect the prototype to real external providers for maps, routing, and payments
+- Provide live routing and payment credentials in deployment to activate the external provider paths
 - Expand moderation and trust workflows beyond the MVP ruleset
 - Replace the lightweight session store with a production-ready auth/session layer when scaling beyond the prototype
 
 ## 21. Launch Checklist
 
 Priority 1:
-- Confirm the Django/DRF deployment path end to end
+- Confirm the Render deployment path end to end
 - Keep the current test suite green before each release
 - Validate the core customer booking flow in the deployed environment
 

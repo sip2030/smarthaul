@@ -10,7 +10,7 @@ services:
       - key: SECRET_KEY
         sync: false
       - key: DEBUG
-        value: true
+        value: false
       - key: ALLOWED_HOSTS
         value: 127.0.0.1,localhost,.onrender.com,smarthaul-059r.onrender.com
       - key: CORS_ALLOWED_ORIGINS
@@ -23,11 +23,25 @@ services:
         sync: false
       - key: APP_BASE_URL
         sync: false
+      - key: PAYMENT_PROVIDER
+        value: flutterwave
       - key: FLUTTERWAVE_SECRET_KEY
         sync: false
       - key: FLUTTERWAVE_WEBHOOK_SECRET_HASH
         sync: false
       - key: ROUTING_PROVIDER
-        value: simulated
+        value: openrouteservice
       - key: OPENROUTESERVICE_API_KEY
         sync: false
+      - key: SESSION_ENGINE
+        value: django.contrib.sessions.backends.db
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: SESSION_COOKIE_SAMESITE
+        value: Lax
+      - key: CSRF_COOKIE_SAMESITE
+        value: Lax
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: SECURE_HSTS_SECONDS
+        value: 2592000

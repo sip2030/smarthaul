@@ -77,6 +77,13 @@
         <div id="vendors-status" class="list"></div>
       </div>
       <div class="card">
+        <div class="split"><h2>Vendor Orders</h2><span class="muted">Cancellation and refund review</span></div>
+        <h3 style="margin-bottom: 8px;">Order statuses</h3>
+        <div id="vendor-orders-status" class="list"></div>
+        <h3 style="margin: 16px 0 8px;">Refund review states</h3>
+        <div id="vendor-orders-refunds" class="list"></div>
+      </div>
+      <div class="card">
         <div class="split"><h2>Support & Safety</h2><span class="muted">Call and moderation load</span></div>
         <h3 style="margin-bottom: 8px;">Call types</h3>
         <div id="calls-status" class="list"></div>
@@ -91,6 +98,8 @@
     const summaryEl = document.getElementById("summary");
     const bookingsStatusEl = document.getElementById("bookings-status");
     const vendorsStatusEl = document.getElementById("vendors-status");
+    const vendorOrdersStatusEl = document.getElementById("vendor-orders-status");
+    const vendorOrdersRefundsEl = document.getElementById("vendor-orders-refunds");
     const callsStatusEl = document.getElementById("calls-status");
     const moderationStatusEl = document.getElementById("moderation-status");
     const routeSourceEl = document.getElementById("route-source");
@@ -135,9 +144,13 @@
         renderMetric("Revenue", data.summary.revenue, `${data.summary.payments_total} payments`),
         renderMetric("Vendors", data.summary.vendors_total, `${data.summary.pending_vendor_reviews} pending reviews`),
         renderMetric("Safety", data.summary.open_moderation_cases, `${data.summary.call_sessions_total} call sessions`),
+        renderMetric("Refunds", data.overview.refunded_value_7d || 0, `${data.payments.refunded} refunded payments`),
+        renderMetric("Vendor refunds", data.overview.pending_vendor_refunds || 0, `${data.marketplace.vendor_orders.refund_reviews} awaiting review`),
       ].join("");
       renderBars(bookingsStatusEl, data.bookings_by_status, "status");
       renderList(vendorsStatusEl, data.vendors_by_status, "status");
+      renderList(vendorOrdersStatusEl, data.trends.vendor_order_status_breakdown || [], "status");
+      renderList(vendorOrdersRefundsEl, data.trends.vendor_order_refund_breakdown || [], "refund_status");
       renderList(callsStatusEl, data.calls_by_type, "call_type");
       renderList(moderationStatusEl, data.moderation_by_status, "status");
       routeSourceEl.textContent = `Current route source: ${data.route_source}.`;

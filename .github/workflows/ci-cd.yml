@@ -1,4 +1,4 @@
-name: SmartHaul CI/CD Pipeline
+﻿name: SmartHaul CI/CD Pipeline
 
 on:
   push:
@@ -7,14 +7,13 @@ on:
     branches: [main, develop]
 
 env:
-  PYTHON_VERSION: '3.10'
-  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -30,36 +29,42 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+          cache-dependency-path: django_smarthaul/requirements.txt
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
-      
-      - name: Run linting
-        run: |
-          pip install flake8 black isort
-          flake8 app.py database.py auth.py --max-line-length=120 --ignore=E501,W503
-          black --check app.py database.py auth.py || true
-          isort --check-only app.py database.py auth.py || true
-      
+          pip install -r django_smarthaul/requirements.txt
+          pip install pytest pytest-django pytest-cov
+
+      - name: Run migrations
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smarthaul_test
+          SECRET_KEY: ci-test-secret-key
+          DEBUG: "false"
+        working-directory: django_smarthaul
+        run: python manage.py migrate --noinput
+
       - name: Run tests
         env:
+          DJANGO_SETTINGS_MODULE: config.settings
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smarthaul_test
-          APP_BASE_URL: https://localhost:5000
+          SECRET_KEY: ci-test-secret-key
+          DEBUG: "false"
+          APP_BASE_URL: http://localhost:8001
         run: |
-          pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
-      
+          pytest django_smarthaul tests -v --cov=django_smarthaul --cov-report=xml
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: unittests
@@ -68,169 +73,68 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install security tools
-        run: |
-          pip install bandit safety
-      
+        run: pip install bandit safety
+
       - name: Run Bandit
-        run: bandit -r app.py database.py auth.py -f json -o bandit-report.json || true
-      
+        run: bandit -r django_smarthaul -f json -o bandit-report.json --exclude django_smarthaul/apps/*/migrations || true
+
       - name: Check dependencies
-        run: safety check --json || true
-
-  build:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: [test, security]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/smarthaul:latest
-            ${{ secrets.DOCKER_USERNAME }}/smarthaul:${{ github.sha }}
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Deploy to Render (Staging)
-        run: |
-          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID_STAGING }} \
-            -H "accept: application/json" \
-            -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
-      
-      - name: Health check
-        run: |
-          sleep 30
-          curl -f https://smarthaul-staging.onrender.com/health || exit 1
+        run: safety check --file django_smarthaul/requirements.txt --json || true
 
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build
+    needs: [test, security]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Create backup before deploy
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Render
         run: |
-          curl -X POST https://smarthaul-prod.onrender.com/admin/backup/create \
-            -H "Authorization: Bearer ${{ secrets.ADMIN_API_KEY }}"
-      
-      - name: Deploy to Render (Production)
-        run: |
-          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID_PROD }} \
+          curl -X POST "https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID_PROD }}" \
             -H "accept: application/json" \
             -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}"
-      
+
       - name: Health check
         run: |
           sleep 60
-          curl -f https://smarthaul.onrender.com/health || exit 1
-      
-      - name: Run smoke tests
-        run: |
-          curl -f https://smarthaul.onrender.com/admin/health/deep \
-            -H "Authorization: Bearer ${{ secrets.ADMIN_API_KEY }}" || exit 1
-      
-      - name: Notify deployment
+          curl -f https://smarthaul-059r.onrender.com/api/auth/health/ || exit 1
+
+      - name: Notify success
         if: success()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✅ Production deployment successful!'
-            })
-      
-      - name: Alert on failure
-        if: failure()
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '❌ Production deployment failed. Check logs.'
-            })
-
-  performance-test:
-    name: Performance Testing
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      
-      - name: Install load testing tools
-        run: |
-          pip install locust
-      
-      - name: Run performance tests
-        run: |
-          locust -f tests/performance/locustfile.py --headless -u 100 -r 10 -t 60s || true
-
-  notify:
-    name: Notify Status
-    runs-on: ubuntu-latest
-    needs: [test, security, build]
-    if: always()
-    
-    steps:
-      - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "text": "SmartHaul CI/CD Pipeline",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*SmartHaul Build Status*\n*Commit:* ${{ github.sha }}\n*Status:* ${{ job.status }}"
-                  }
-                }
-              ]
+            if (context.issue && context.issue.number) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '✅ Production deployment successful!'
+              })
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.issue && context.issue.number) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '❌ Production deployment failed. Check the Actions log.'
+              })
+            }

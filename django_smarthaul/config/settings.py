@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     'apps.vendors',
     'apps.providers',
     'apps.payments',
+    'apps.communications',
+    'apps.analytics',
 ]
 
 MIDDLEWARE = [
@@ -74,9 +76,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 _DATABASE_URL = config('DATABASE_URL', default='')
 if _DATABASE_URL:
     DATABASES = {'default': dj_database_url.parse(_DATABASE_URL, conn_max_age=600)}
-    # Add connection timeout to prevent gunicorn workers from hanging
-    DATABASES['default'].setdefault('OPTIONS', {})
-    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+    # Add connection timeout only for non-SQLite backends
+    if DATABASES['default'].get('ENGINE') != 'django.db.backends.sqlite3':
+        DATABASES['default'].setdefault('OPTIONS', {})
+        DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
@@ -103,7 +106,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -128,6 +130,22 @@ REST_FRAMEWORK = {
 # CORS
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000', cast=lambda v: v.split(','))
 
+# Session and cookie hardening
+SESSION_ENGINE = config('SESSION_ENGINE', default='django.contrib.sessions.backends.db')
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = config('SESSION_COOKIE_SAMESITE', default='Lax')
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool)
+SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=60 * 60 * 24, cast=int)
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = config('CSRF_COOKIE_SAMESITE', default='Lax')
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=not DEBUG, cast=bool)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=60 * 60 * 24 * 30, cast=int) if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+USE_X_FORWARDED_HOST = True
+
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -142,6 +160,7 @@ RATE_LIMIT_REQUESTS_PER_MINUTE = config('RATE_LIMIT_REQUESTS_PER_MINUTE', defaul
 
 # Security
 SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_CONTENT_SECURITY_POLICY = {
     'default-src': ("'self'",),
     'script-src': ("'self'", "'unsafe-inline'"),
